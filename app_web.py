@@ -36,7 +36,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # ==========================================
-# INTELIGÊNCIA DE EMOJIS E CORES DE RISCO
+# INTELIGÊNCIA DE EMOJIS E CORES DE RISCO BLINDADAS
 # ==========================================
 def adicionar_emoji_natureza(tipo):
     t = str(tipo).upper()
@@ -46,10 +46,10 @@ def adicionar_emoji_natureza(tipo):
     elif 'DESABAMENTO' in t: return f"🏚️ {tipo}"
     else: return f"📝 {tipo}"
 
-# Dicionários unificados para que o Gráfico, o Alfinete e o Raio usem as mesmas regras!
-CORES_RISCO_HEX = {'Alto': '#FF9800', 'Médio': '#FFEB3B', 'Baixo': '#4CAF50', 'Crítico': '#F44336'}
-CORES_RISCO_PINO = {'Alto': 'orange', 'Médio': 'beige', 'Baixo': 'green', 'Crítico': 'red'}
-CORES_TEXTO_RISCO = {'Alto': 'white', 'Médio': 'black', 'Baixo': 'white', 'Crítico': 'white'}
+# Mapeamento robusto (cobre opções com e sem acento, tudo em maiúsculo)
+CORES_RISCO_HEX = {'ALTO': '#FF9800', 'MÉDIO': '#FFEB3B', 'MEDIO': '#FFEB3B', 'BAIXO': '#4CAF50', 'CRÍTICO': '#F44336', 'CRITICO': '#F44336'}
+CORES_RISCO_PINO = {'ALTO': 'orange', 'MÉDIO': 'beige', 'MEDIO': 'beige', 'BAIXO': 'green', 'CRÍTICO': 'red', 'CRITICO': 'red'}
+CORES_TEXTO_RISCO = {'ALTO': 'white', 'MÉDIO': 'black', 'MEDIO': 'black', 'BAIXO': 'white', 'CRÍTICO': 'white', 'CRITICO': 'white'}
 
 # ==========================================
 # FUNÇÃO DE DADOS
@@ -62,11 +62,14 @@ def carregar_dados():
         if dados:
             df = pd.DataFrame.from_dict(dados, orient='index')
             colunas_padrao = {'tipo': 'Não Informado', 'encaminhamento': 'Não Informado', 
-                              'risco': 'Médio', 'data': '', 'bairro': 'Não Informado', 'municipio': 'Manaus'}
+                              'risco': 'MÉDIO', 'data': '', 'bairro': 'Não Informado', 'municipio': 'Manaus'}
             for col, padrao in colunas_padrao.items():
                 if col not in df.columns: df[col] = padrao
             
             df['tipo_emoji'] = df['tipo'].apply(adicionar_emoji_natureza)
+            
+            # Padroniza a coluna de risco para TUDO MAIÚSCULO e sem espaços laterais
+            df['risco_padrao'] = df['risco'].astype(str).str.strip().str.upper()
             
             # Tratamento de Datas
             df['data_dt'] = pd.to_datetime(df['data'], errors='coerce', dayfirst=True)
@@ -140,16 +143,15 @@ if not df.empty:
                 tipo_com_emoji = row.get('tipo_emoji', tipo_bruto)
                 bairro = row.get('bairro', 'Não informado')
                 endereco = row.get('endereco', '')
-                risco = row.get('risco', 'Médio')
                 data_reg = row.get('data', '')
                 
-                # ==========================================
-                # O SEGREDO ESTÁ AQUI: TUDO SEGUE O RISCO
-                # ==========================================
-                cor_hex = CORES_RISCO_HEX.get(risco, '#9E9E9E') # Cinza se não tiver risco definido
-                cor_icone = CORES_RISCO_PINO.get(risco, 'gray')
-                cor_risco_texto = CORES_TEXTO_RISCO.get(risco, 'black')
-                # ==========================================
+                # Pega o risco já padronizado em MAIÚSCULO
+                risco_upper = row.get('risco_padrao', 'MÉDIO')
+                
+                # As cores agora não falham mais!
+                cor_hex = CORES_RISCO_HEX.get(risco_upper, '#9E9E9E') 
+                cor_icone = CORES_RISCO_PINO.get(risco_upper, 'gray')
+                cor_risco_texto = CORES_TEXTO_RISCO.get(risco_upper, 'black')
 
                 html_popup = f"""
                 <div style="font-family: Arial; min-width: 200px;">
@@ -162,7 +164,7 @@ if not df.empty:
                         <div style="margin-top: 5px;">
                             <b>Nível de Risco:</b> 
                             <span style="background-color: {cor_hex}; color: {cor_risco_texto}; padding: 2px 6px; border-radius: 10px; font-size: 11px; font-weight: bold;">
-                                {risco.upper()}
+                                {risco_upper}
                             </span>
                         </div>
                         <hr style="margin: 8px 0; border-color: #EEE;">
@@ -171,15 +173,13 @@ if not df.empty:
                 </div>
                 """
                 
-                # Alfinete ditado pelo Risco
                 folium.Marker(
                     [lat, lon],
                     popup=folium.Popup(html_popup, max_width=300),
-                    tooltip=f"{tipo_com_emoji} - Risco {risco}",
+                    tooltip=f"{tipo_com_emoji} - Risco {risco_upper}",
                     icon=folium.Icon(color=cor_icone, icon="info-sign")
                 ).add_to(m)
                 
-                # Raio de 800m ditado pelo Risco
                 folium.Circle(
                     location=[lat, lon],
                     radius=800,
@@ -211,7 +211,7 @@ if not df.empty:
             
         with pizza_col:
             st.markdown("<div style='font-size: 13px; font-weight: bold; color: #555; text-align: center;'>Nível de Risco</div>", unsafe_allow_html=True)
-            contagem_risco = df_filtrado['risco'].value_counts().reset_index()
+            contagem_risco = df_filtrado['risco_padrao'].value_counts().reset_index()
             contagem_risco.columns = ['Risco', 'Qtd']
             
             fig_pie = px.pie(contagem_risco, values='Qtd', names='Risco', hole=0.4, 
