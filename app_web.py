@@ -6,16 +6,113 @@ import plotly.express as px
 from core.database import obter_referencia
 
 # ==========================================
-# CONFIGURAÇÃO DA PÁGINA
+# CONFIGURAÇÃO DA PÁGINA (Inicia no modo claro)
 # ==========================================
 st.set_page_config(page_title="Gestão Defesa Civil - Login", layout="wide", initial_sidebar_state="collapsed")
 
-# CSS para Estilização Geral
+# ==========================================
+# SISTEMA DE LOGIN COM CSS CORRIGIDO (BLINDADO)
+# ==========================================
+def tela_login():
+    # CSS agressivo para forçar fundo branco na área de login, independente do tema do navegador
+    st.markdown("""
+        <style>
+        /* Esconde menus padrões */
+        header {visibility: hidden;}
+        footer {visibility: hidden;}
+        
+        /* Fundo geral da tela (cinza claro) */
+        .stApp { background-color: #F4F6F9 !important; }
+        
+        /* Centraliza o conteúdo */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 80vh;
+        }
+        
+        /* Cria o 'cartão' branco centralizado para o login */
+        .login-box {
+            background-color: white !important;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            text-align: center;
+            width: 400px;
+        }
+        
+        /* Força títulos e labels em preto/azul escuro dentro do cartão */
+        .login-box h2, .login-box h3, .login-box label {
+            color: #191970 !important;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        
+        /* Estiliza o botão Entrar */
+        div.stButton > button:first-child {
+            background-color: #191970;
+            color: white;
+            width: 100%;
+            border: none;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        div.stButton > button:first-child:hover {
+            background-color: #2a2a9e;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Estrutura HTML/Streamlit para centralizar
+    st.markdown('<div class="login-container">', unsafe_allow_html=True)
+    
+    # Usamos colunas para centralizar o bloco branco
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col2:
+        # Iniciamos o 'cartão' branco
+        st.markdown('<div class="login-box">', unsafe_allow_html=True)
+        
+        # Conteúdo do Login
+        st.image("https://raw.githubusercontent.com/EBRlock/dashboard-defesa-civil/main/assets/logo_defesa.png", width=250)
+        st.write("")
+        st.markdown("<h3>🔐 Acesso Restrito</h3>", unsafe_allow_html=True)
+        st.write("")
+
+        usuario = st.text_input("Usuário", key="user_input")
+        senha = st.text_input("Senha", type="password", key="pass_input")
+        
+        st.write("")
+        if st.button("Entrar", key="login_btn"):
+            if usuario == "gestaodefesacivil" and senha == "defesacivilam26":
+                st.session_state["autenticado"] = True
+                st.rerun()
+            else:
+                st.error("Usuário ou Senha incorretos.")
+        
+        # Fechamos as divs HTML
+        st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# Lógica de Sessão
+if "autenticado" not in st.session_state:
+    st.session_state["autenticado"] = False
+
+if not st.session_state["autenticado"]:
+    tela_login()
+    st.stop() 
+
+# ==========================================
+# CSS DO DASHBOARD (SÓ APARECE APÓS LOGIN)
+# ==========================================
+# Re-aplicamos o CSS do Dashboard para garantir que ele fique bonito
 st.markdown("""
     <style>
     header {visibility: hidden;}
     footer {visibility: hidden;}
-    .stApp { background-color: #F4F6F9; }
+    .stApp { background-color: #F4F6F9 !important; }
+    .block-container { padding-top: 3rem; padding-bottom: 1rem; padding-left: 2rem; padding-right: 2rem; }
+    
     .cabecalho {
         background-color: #191970; color: white; padding: 12px 20px; 
         border-radius: 4px; margin-bottom: 15px; font-weight: bold;
@@ -26,39 +123,13 @@ st.markdown("""
         background-color: white; border: 1px solid #D0D0D0; border-radius: 4px; 
         padding: 15px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
+    div[data-testid="stMetricValue"] > div { color: #191970 !important; font-size: 36px !important; font-weight: bold; }
+    h3, p, strong { color: #333333 !important; font-family: 'Segoe UI', Arial, sans-serif; }
     </style>
     """, unsafe_allow_html=True)
 
 # ==========================================
-# SISTEMA DE LOGIN
-# ==========================================
-def tela_login():
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        st.write("") 
-        st.image("https://raw.githubusercontent.com/EBRlock/dashboard-defesa-civil/main/assets/logo_defesa.png", width=200)
-        st.subheader("🔐 Acesso Restrito")
-        
-        usuario = st.text_input("Usuário")
-        senha = st.text_input("Senha", type="password")
-        
-        if st.button("Entrar"):
-            if usuario == "gestaodefesacivil" and senha == "defesacivilam26":
-                st.session_state["autenticado"] = True
-                st.rerun()
-            else:
-                st.error("Usuário ou Senha incorretos.")
-
-# Verifica se o usuário já logou nesta sessão
-if "autenticado" not in st.session_state:
-    st.session_state["autenticado"] = False
-
-if not st.session_state["autenticado"]:
-    tela_login()
-    st.stop() # Interrompe a execução aqui até logar
-
-# ==========================================
-# FUNÇÕES DE APOIO (EMOJIS E CORES)
+# FUNÇÕES DE APOIO E DADOS
 # ==========================================
 def adicionar_emoji_natureza(tipo):
     t = str(tipo).upper()
@@ -96,8 +167,12 @@ def carregar_dados():
         return pd.DataFrame()
 
 # ==========================================
-# CONTEÚDO DO DASHBOARD (SÓ APARECE APÓS LOGIN)
+# CONTEÚDO DO DASHBOARD (APÓS LOGIN)
 # ==========================================
+# Atualiza o título da página para o nome do sistema
+st.title("") # Gambiarra para resetar o título do st.set_page_config
+st.markdown("<script>document.title = 'Painel Tático - Defesa Civil';</script>", unsafe_allow_html=True)
+
 df = carregar_dados()
 
 if not df.empty:
@@ -155,7 +230,6 @@ if not df.empty:
                     icon=folium.Icon(color=cor_icone, icon="info-sign")
                 ).add_to(m)
                 
-                # RAIO REDUZIDO 3X (De 800m para 260m)
                 folium.Circle(
                     location=[lat, lon],
                     radius=260, 
@@ -171,11 +245,12 @@ if not df.empty:
         c1.metric("TOTAL", len(df_filtrado))
         with c2:
             fig = px.pie(df_filtrado, names='risco_padrao', hole=0.4, color='risco_padrao', color_discrete_map=CORES_RISCO_HEX)
-            fig.update_layout(height=200, margin=dict(t=0, b=0, l=0, r=0))
+            fig.update_layout(height=200, margin=dict(t=0, b=0, l=0, r=0), paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'))
             st.plotly_chart(fig, use_container_width=True, theme=None)
     with col_inf_dir:
         df_g = df_filtrado[df_filtrado['Mes_Filtro'] != 'Desconhecido']
         if not df_g.empty:
             fig_bar = px.bar(df_g['Mes_Filtro'].value_counts().reset_index(), x='Mes_Filtro', y='count')
-            fig_bar.update_layout(height=200, margin=dict(t=10, b=0, l=0, r=0))
+            fig_bar.update_traces(marker_color='#191970')
+            fig_bar.update_layout(height=200, margin=dict(t=10, b=0, l=0, r=0), paper_bgcolor='white', plot_bgcolor='white', font=dict(color='black'))
             st.plotly_chart(fig_bar, use_container_width=True, theme=None)
