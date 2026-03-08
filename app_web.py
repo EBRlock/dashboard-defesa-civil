@@ -36,7 +36,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # ==========================================
-# INTELIGÊNCIA DE EMOJIS
+# INTELIGÊNCIA DE EMOJIS E CORES DE RISCO
 # ==========================================
 def adicionar_emoji_natureza(tipo):
     t = str(tipo).upper()
@@ -46,9 +46,9 @@ def adicionar_emoji_natureza(tipo):
     elif 'DESABAMENTO' in t: return f"🏚️ {tipo}"
     else: return f"📝 {tipo}"
 
-# Dicionário oficial de cores de Risco (Regra do Eduardo)
-CORES_RISCO = {'Alto': '#FF9800', 'Médio': '#FFEB3B', 'Baixo': '#4CAF50', 'Crítico': '#F44336'}
-# Para garantir que o amarelo tenha contraste com texto branco no mapa:
+# Dicionários unificados para que o Gráfico, o Alfinete e o Raio usem as mesmas regras!
+CORES_RISCO_HEX = {'Alto': '#FF9800', 'Médio': '#FFEB3B', 'Baixo': '#4CAF50', 'Crítico': '#F44336'}
+CORES_RISCO_PINO = {'Alto': 'orange', 'Médio': 'beige', 'Baixo': 'green', 'Crítico': 'red'}
 CORES_TEXTO_RISCO = {'Alto': 'white', 'Médio': 'black', 'Baixo': 'white', 'Crítico': 'white'}
 
 # ==========================================
@@ -66,7 +66,6 @@ def carregar_dados():
             for col, padrao in colunas_padrao.items():
                 if col not in df.columns: df[col] = padrao
             
-            # Aplica os emojis na coluna 'tipo'
             df['tipo_emoji'] = df['tipo'].apply(adicionar_emoji_natureza)
             
             # Tratamento de Datas
@@ -144,29 +143,25 @@ if not df.empty:
                 risco = row.get('risco', 'Médio')
                 data_reg = row.get('data', '')
                 
-                # Cor do alfinete baseada na Natureza (Igual fizemos antes)
-                tipo_upper = tipo_bruto.upper()
-                if 'INCÊNDIO' in tipo_upper: cor_icone, cor_hex = 'red', '#F44336'
-                elif 'DESLIZAMENTO' in tipo_upper: cor_icone, cor_hex = 'orange', '#FF9800'
-                elif 'ALAGAMENTO' in tipo_upper: cor_icone, cor_hex = 'blue', '#2196F3'
-                elif 'DESABAMENTO' in tipo_upper: cor_icone, cor_hex = 'darkred', '#B71C1C'
-                else: cor_icone, cor_hex = 'cadetblue', '#607D8B'
-
-                # Puxa as cores de Risco oficiais para o Crachá
-                cor_risco_fundo = CORES_RISCO.get(risco, '#FFEB3B') # Amarelo por padrão
+                # ==========================================
+                # O SEGREDO ESTÁ AQUI: TUDO SEGUE O RISCO
+                # ==========================================
+                cor_hex = CORES_RISCO_HEX.get(risco, '#9E9E9E') # Cinza se não tiver risco definido
+                cor_icone = CORES_RISCO_PINO.get(risco, 'gray')
                 cor_risco_texto = CORES_TEXTO_RISCO.get(risco, 'black')
+                # ==========================================
 
                 html_popup = f"""
                 <div style="font-family: Arial; min-width: 200px;">
-                    <div style="background-color: {cor_hex}; color: white; padding: 6px; font-weight: bold; border-radius: 4px 4px 0 0; text-align: center; font-size: 14px;">
+                    <div style="background-color: {cor_hex}; color: {cor_risco_texto}; padding: 6px; font-weight: bold; border-radius: 4px 4px 0 0; text-align: center; font-size: 14px;">
                         {tipo_com_emoji.upper()}
                     </div>
                     <div style="padding: 10px; border: 1px solid #CCC; border-top: none; background-color: #FAFAFA;">
                         <span style="font-size: 11px; color: #888;">📅 {data_reg}</span><br>
                         <b>📍 Bairro:</b> {bairro}<br>
                         <div style="margin-top: 5px;">
-                            <b>Risco:</b> 
-                            <span style="background-color: {cor_risco_fundo}; color: {cor_risco_texto}; padding: 2px 6px; border-radius: 10px; font-size: 11px; font-weight: bold;">
+                            <b>Nível de Risco:</b> 
+                            <span style="background-color: {cor_hex}; color: {cor_risco_texto}; padding: 2px 6px; border-radius: 10px; font-size: 11px; font-weight: bold;">
                                 {risco.upper()}
                             </span>
                         </div>
@@ -176,20 +171,22 @@ if not df.empty:
                 </div>
                 """
                 
+                # Alfinete ditado pelo Risco
                 folium.Marker(
                     [lat, lon],
                     popup=folium.Popup(html_popup, max_width=300),
-                    tooltip=f"{tipo_com_emoji} - {bairro}",
+                    tooltip=f"{tipo_com_emoji} - Risco {risco}",
                     icon=folium.Icon(color=cor_icone, icon="info-sign")
                 ).add_to(m)
                 
+                # Raio de 800m ditado pelo Risco
                 folium.Circle(
                     location=[lat, lon],
                     radius=800,
                     color=cor_hex, 
                     fill=True,
                     fill_color=cor_hex, 
-                    fill_opacity=0.3, 
+                    fill_opacity=0.35, 
                     weight=1.5
                 ).add_to(m)
 
@@ -218,7 +215,7 @@ if not df.empty:
             contagem_risco.columns = ['Risco', 'Qtd']
             
             fig_pie = px.pie(contagem_risco, values='Qtd', names='Risco', hole=0.4, 
-                             color='Risco', color_discrete_map=CORES_RISCO)
+                             color='Risco', color_discrete_map=CORES_RISCO_HEX)
             
             fig_pie.update_layout(margin=dict(t=10, b=10, l=10, r=10), height=180,
                                   paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
