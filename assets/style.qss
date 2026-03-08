@@ -1,0 +1,33 @@
+/* Fundo e Cores Principais do Canva */
+QMainWindow, QWidget#MainContent {
+    background-color: #FFFFFF;
+}
+
+QWidget#Header {
+    background-color: #1A0066; /* Azul Marinho do Canva */
+    min-height: 80px;
+}
+
+QLabel#WelcomeText {
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+/* Botões Estilizados do Canva */
+QPushButton#MenuButton {
+    background-color: white;
+    border: 3px solid #E67E22; /* Borda Laranja */
+    border-radius: 25px;
+    color: #1A0066;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: left;
+    padding-left: 30px;
+    min-height: 80px;
+}
+
+QPushButton#MenuButton:hover {
+    background-color: #FDF2E9;
+}
