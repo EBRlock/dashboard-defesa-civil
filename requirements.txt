@@ -3,4 +3,5 @@ pandas
 folium
 streamlit-folium
 plotly
+python-dotenv
 firebase-admin
