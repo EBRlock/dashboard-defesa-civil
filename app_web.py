@@ -55,6 +55,9 @@ def carregar_dados():
 # ==========================================
 # TELA 1: LOGIN (Design do App .EXE)
 # ==========================================
+# ==========================================
+# TELA 1: LOGIN (Design do App .EXE Corrigido)
+# ==========================================
 def tela_login():
     st.markdown("""
         <style>
@@ -65,30 +68,26 @@ def tela_login():
         /* Fundo Azul Escuro Oficial */
         .stApp { background-color: #191970 !important; }
         
-        /* Efeito Glassmorphism (Vidro Translúcido) */
-        .login-box {
-            background: rgba(255, 255, 255, 0.08) !important;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+        /* O GRANDE TRUQUE: Aplicar o vidro diretamente na Coluna Central do Streamlit */
+        [data-testid="column"]:nth-of-type(2) {
+            background: rgba(255, 255, 255, 0.05) !important;
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 50px;
+            padding: 3rem 2rem;
             border-radius: 20px;
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-            max-width: 400px;
-            margin: auto;
-            margin-top: 10vh;
-            text-align: center;
+            margin-top: 8vh;
         }
         
         /* Força textos para branco dando contraste */
-        .login-box h3, .login-box label, .login-box p {
+        h1, h2, h3, p, label {
             color: #FFFFFF !important;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            font-weight: bold;
+            font-family: 'Segoe UI', Arial, sans-serif !important;
         }
 
         /* Campos de input translúcidos */
-        div.stTextInput > div > div > input {
+        .stTextInput input {
             background-color: rgba(255, 255, 255, 0.1) !important;
             color: white !important;
             border: 1px solid rgba(255, 255, 255, 0.3) !important;
@@ -96,8 +95,8 @@ def tela_login():
         }
         
         /* Botão Entrar */
-        div.stButton > button {
-            background-color: rgba(255, 255, 255, 0.2) !important;
+        .stButton button {
+            background-color: rgba(255, 255, 255, 0.15) !important;
             color: white !important;
             border: 1px solid rgba(255, 255, 255, 0.4) !important;
             border-radius: 8px;
@@ -106,31 +105,38 @@ def tela_login():
             font-weight: bold;
             transition: all 0.3s ease;
         }
-        div.stButton > button:hover {
-            background-color: rgba(255, 255, 255, 0.4) !important;
+        .stButton button:hover {
+            background-color: rgba(255, 255, 255, 0.3) !important;
+            border-color: white !important;
         }
         </style>
     """, unsafe_allow_html=True)
 
-    _, col_central, _ = st.columns([1, 2, 1])
+    # Ajustei as proporções para a caixa de vidro ficar mais elegante no centro
+    _, col_central, _ = st.columns([1.2, 1.2, 1.2]) 
     
     with col_central:
-        st.markdown('<div class="login-box">', unsafe_allow_html=True)
-        st.image("https://raw.githubusercontent.com/EBRlock/dashboard-defesa-civil/main/assets/logo_defesa.png", use_container_width=True)
-        st.markdown("<h3 style='margin-top: 10px; margin-bottom: 20px; letter-spacing: 2px;'>DEFESA CIVIL</h3>", unsafe_allow_html=True)
+        # Imagem e título centralizados via HTML para travar o tamanho
+        st.markdown(
+            '''
+            <div style="text-align: center;">
+                <img src="https://raw.githubusercontent.com/EBRlock/dashboard-defesa-civil/main/assets/logo_defesa.png" width="180">
+                <h2 style="margin-top: 15px; margin-bottom: 25px; letter-spacing: 2px;">DEFESA CIVIL</h2>
+            </div>
+            ''', 
+            unsafe_allow_html=True
+        )
         
         usuario = st.text_input("USUÁRIO")
         senha = st.text_input("SENHA", type="password")
         
-        st.write("")
+        st.write("") # Pequeno espaçamento
         if st.button("ENTRAR"):
-            # Permite o acesso oficial ou o atalho de desenvolvedor
             if (usuario == "gestaodefesacivil" and senha == "defesacivilam26") or (usuario == "admin" and senha == "1234"):
                 st.session_state["autenticado"] = True
                 navegar("dashboard")
             else:
                 st.error("Credenciais inválidas.")
-        st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
 # CSS DO HUB E DASHBOARD (Tema Claro)
@@ -306,3 +312,4 @@ else:
         tela_dashboard()
     elif st.session_state["rota"] == "registro":
         tela_registro()
+
