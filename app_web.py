@@ -75,103 +75,60 @@ def carregar_dados():
         return pd.DataFrame()
 
 # ==========================================
-# 4. CSS GLOBAL E DA BARRA SUPERIOR
+# 4. CSS GLOBAL SEGURO E ORGANIZADO
 # ==========================================
 def aplicar_css_global():
     st.markdown("""
         <style>
         #MainMenu {visibility: hidden;} header {visibility: hidden;} footer {visibility: hidden;}
         
-        /* Previne barra de rolagem horizontal pelo truque da barra superior */
-        [data-testid="stAppViewContainer"] { overflow-x: hidden; }
-        
-        /* Fundo Oficial Azul Marinho */
+        /* Fundo Oficial e Margens Seguras */
         .stApp { background-color: #19194D !important; }
-        .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; max-width: 98% !important; }
+        .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; max-width: 95% !important; }
         
-        /* Textos e Fontes */
-        h1, h2, h3, h4, p, label, .stMarkdown { color: #FFFFFF !important; font-family: 'Segoe UI', Arial, sans-serif !important; font-size: 16px !important; }
+        /* Textos Base */
+        h1, h2, h3, h4, p, label, .stMarkdown { color: #FFFFFF !important; font-family: 'Segoe UI', Arial, sans-serif !important; }
         .texto-destaque { color: #FFFFFF !important; font-weight: bold; font-size: 16px !important; letter-spacing: 1px;}
         
-        /* Cartões Translucidos */
+        /* Barra Superior Padrão (Sem quebrar o layout) */
+        .barra-superior {
+            background-color: #0B0B2A; color: #FFFFFF; padding: 12px 20px; border-radius: 6px;
+            font-weight: 800; font-size: 18px; text-transform: uppercase;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid #4A4A8C;
+            text-align: center; margin-bottom: 20px;
+        }
+
+        /* Cartões Internos */
         .card-escuro {
-            background-color: rgba(255, 255, 255, 0.05) !important; border-radius: 8px; padding: 25px;
+            background-color: rgba(255, 255, 255, 0.05) !important; border-radius: 8px; padding: 20px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); height: 100%;
         }
-        .titulo-cartao { font-size: 15px; font-weight: 800; color: #FFFFFF !important; text-transform: uppercase; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 8px; }
+        .titulo-cartao { font-size: 14px; font-weight: 800; color: #FFFFFF !important; text-transform: uppercase; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 8px; }
 
-        /* Correção Inputs */
+        /* Campos de Formulário Visíveis */
         .stTextInput label p, .stSelectbox label p, .stDateInput label p, .stTimeInput label p { font-weight: 700 !important; color: #FFFFFF !important; }
         input, div[data-baseweb="select"] > div { background-color: #23235B !important; border: 1px solid #4A4A8C !important; border-radius: 6px !important; }
-        input, div[data-baseweb="select"] * { color: #FFFFFF !important; font-size: 16px !important; }
+        input, div[data-baseweb="select"] * { color: #FFFFFF !important; font-size: 15px !important; }
         div[data-baseweb="calendar"] * { color: #000000 !important; }
         div[data-baseweb="calendar"] { background-color: #FFFFFF !important; }
         ul[data-baseweb="menu"] { background-color: #23235B !important; border: 1px solid #4A4A8C !important; }
         li[role="option"] { color: #FFFFFF !important; font-size: 15px !important; }
         li[role="option"]:hover { background-color: #4A4A8C !important; }
-        [data-testid="stVerticalBlock"] { gap: 0.6rem !important; }
+        [data-testid="stVerticalBlock"] { gap: 0.5rem !important; }
 
-        /* Botões Base */
-        div.stButton > button[kind="secondary"] { background-color: #23235B !important; color: #FFFFFF !important; border: 1px solid #4A4A8C !important; font-weight: bold !important; height: 50px !important; font-size: 16px !important; }
+        /* Botões Organizados */
+        div.stButton > button[kind="secondary"] { background-color: #23235B !important; color: #FFFFFF !important; border: 1px solid #4A4A8C !important; font-weight: bold !important; height: 45px !important; }
         div.stButton > button[kind="secondary"]:hover { background-color: #2D2D70 !important; border-color: #FFFFFF !important; }
-        div.stButton > button[kind="primary"] { background-color: #FF8C00 !important; color: #FFFFFF !important; border: none !important; font-weight: bold !important; height: 50px !important; margin-top: 15px !important; font-size: 18px !important; }
+        
+        div.stButton > button[kind="primary"] { background-color: #FF8C00 !important; color: #FFFFFF !important; border: none !important; font-weight: bold !important; height: 45px !important; margin-top: 10px !important; }
         div.stButton > button[kind="primary"]:hover { background-color: #E67E00 !important; }
-        div.stButton > button[kind="primary"] p { color: #FFFFFF !important; font-size: 18px !important; font-weight: bold !important; }
+        div.stButton > button[kind="primary"] p { color: #FFFFFF !important; font-weight: bold !important; }
         
         /* Métricas e Tabelas */
-        div[data-testid="metric-container"] { background-color: rgba(255,255,255,0.05) !important; padding: 15px !important; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center; }
-        div[data-testid="stMetricValue"] > div { color: #FFFFFF !important; font-size: 45px !important; font-weight: 900 !important; }
-        div[data-testid="stMetricLabel"] > div p { color: #FFFFFF !important; font-size: 14px !important; font-weight: 600 !important; text-transform: uppercase; }
+        div[data-testid="metric-container"] { background-color: rgba(255,255,255,0.05) !important; padding: 10px !important; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center; }
+        div[data-testid="stMetricValue"] > div { color: #FFFFFF !important; font-size: 35px !important; font-weight: 900 !important; }
+        div[data-testid="stMetricLabel"] > div p { color: #FFFFFF !important; font-size: 12px !important; font-weight: bold !important; }
         [data-testid="stDataFrame"] { background-color: #23235B !important; border-radius: 6px; }
-        </style>
-    """, unsafe_allow_html=True)
-
-def aplicar_barra_superior_nativa():
-    """O Truque CSS que funde o Botão Voltar e o Título numa Barra de Ponta a Ponta"""
-    st.markdown("""
-        <style>
-        /* Zera o espaço em branco do topo da tela */
-        .block-container { padding-top: 0rem !important; }
-        
-        /* Transforma a PRIMEIRA linha de colunas na Barra Superior Esticada */
-        [data-testid="stHorizontalBlock"]:first-of-type {
-            background-color: #0B0B2A;
-            border-bottom: 2px solid #4A4A8C;
-            padding: 15px 5%; /* Padding lateral flexível */
-            
-            /* O Hack para quebrar o container e preencher 100% da largura */
-            width: 100vw;
-            position: relative;
-            left: 50%;
-            right: 50%;
-            margin-left: -50vw;
-            margin-right: -50vw;
-            
-            align-items: center; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-            margin-bottom: 25px;
-            z-index: 99;
-        }
-        
-        /* Estiliza o Botão Voltar para nascer DENTRO da barra e combinar com ela */
-        [data-testid="stHorizontalBlock"]:first-of-type button {
-            background-color: #19194D !important;
-            border: 1px solid #4A4A8C !important;
-            color: #FFFFFF !important;
-            height: 42px !important;
-            margin: 0 !important;
-        }
-        [data-testid="stHorizontalBlock"]:first-of-type button:hover {
-            background-color: #FF8C00 !important; /* Feedback visual laranja ao passar o mouse */
-            border-color: #FF8C00 !important;
-        }
-        
-        /* O Título não precisa mais de caixa, ele herda o fundo da barra inteira */
-        .barra-superior-texto {
-            color: #FFFFFF;
-            font-weight: 800; font-size: 20px; text-transform: uppercase;
-            margin: 0; padding-left: 10px;
-        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -183,7 +140,7 @@ def tela_login():
     _, col_centro, _ = st.columns([1.5, 2, 1.5])
     with col_centro:
         st.markdown('<div class="card-escuro" style="margin-top: 10vh; text-align: center;">', unsafe_allow_html=True)
-        st.image("https://raw.githubusercontent.com/EBRlock/dashboard-defesa-civil/main/assets/logo_defesa.png", width=140)
+        st.image("https://raw.githubusercontent.com/EBRlock/dashboard-defesa-civil/main/assets/logo_defesa.png", width=130)
         st.markdown("<h2 style='margin-top: 15px;'>DEFESA CIVIL</h2>", unsafe_allow_html=True)
         st.markdown("<p class='texto-destaque'>SISTEMA INTEGRADO DE GESTÃO</p>", unsafe_allow_html=True)
         st.write("")
@@ -201,7 +158,7 @@ def tela_hub():
     _, col_centro, _ = st.columns([1.5, 2, 1.5])
     with col_centro:
         st.markdown('<div class="card-escuro" style="margin-top: 10vh; text-align: center;">', unsafe_allow_html=True)
-        st.image("https://raw.githubusercontent.com/EBRlock/dashboard-defesa-civil/main/assets/logo_defesa.png", width=140)
+        st.image("https://raw.githubusercontent.com/EBRlock/dashboard-defesa-civil/main/assets/logo_defesa.png", width=130)
         st.markdown("<h2 style='margin-top: 15px;'>DEFESA CIVIL</h2>", unsafe_allow_html=True)
         st.markdown("<p class='texto-destaque'>BEM-VINDO AO PORTAL OPERACIONAL</p>", unsafe_allow_html=True)
         st.write("---")
@@ -216,23 +173,29 @@ def tela_hub():
         st.markdown('</div>', unsafe_allow_html=True)
 
 def tela_registro():
-    aplicar_barra_superior_nativa() # Chama o CSS que estica a primeira linha
-    
-    # Esta linha 1 vira a Barra Superior
     col_v, col_t = st.columns([1, 10])
     with col_v: 
         if st.button("⬅ VOLTAR", type="secondary", use_container_width=True): navegar("hub")
     with col_t: 
-        st.markdown("<div class='barra-superior-texto'>CENTRAL DE MONITORAMENTO - REGISTRO E DESPACHO</div>", unsafe_allow_html=True)
+        st.markdown("<div class='barra-superior'>CENTRAL DE MONITORAMENTO - REGISTRO E DESPACHO</div>", unsafe_allow_html=True)
 
-    # Linha 2 (Conteúdo Real)
-    col_form, col_meio, col_mapa = st.columns([1.3, 1, 2.5])
+    col_form, col_meio, col_mapa = st.columns([1.5, 1, 2.5])
     
     with col_mapa:
         st.markdown("<div class='card-escuro'>", unsafe_allow_html=True)
         st.markdown("<p class='texto-destaque'>📍 TOQUE NO MAPA PARA CAPTURAR A COORDENADA</p>", unsafe_allow_html=True)
-        m_registro = folium.Map(location=[-3.119, -60.021], zoom_start=12, tiles="CartoDB dark_matter")
-        mapa_clicado = st_folium(m_registro, height=500, use_container_width=True, key="mapa_novo")
+        
+        # Mapa Claro (Positron)
+        m_registro = folium.Map(location=[-3.119, -60.021], zoom_start=12, tiles="CartoDB positron")
+        
+        # Adiciona o Pino se já houver clique prévio
+        if st.session_state["lat_capturada"] and st.session_state["lon_capturada"]:
+            folium.Marker(
+                [st.session_state["lat_capturada"], st.session_state["lon_capturada"]], 
+                icon=folium.Icon(color="red", icon="map-marker")
+            ).add_to(m_registro)
+
+        mapa_clicado = st_folium(m_registro, height=450, use_container_width=True, key="mapa_novo")
         
         if mapa_clicado and mapa_clicado.get("last_clicked"):
             lat, lon = mapa_clicado["last_clicked"]["lat"], mapa_clicado["last_clicked"]["lng"]
@@ -251,7 +214,7 @@ def tela_registro():
         solicitante = st.text_input("SOLICITANTE", placeholder="Nome completo")
         municipio = st.text_input("MUNICÍPIO", value="Manaus")
         bairro = st.text_input("BAIRRO", placeholder="Bairro da ocorrência")
-        endereco = st.text_input("LOGRADOURO (RUA / AV)", value=st.session_state["endereco_capturado"])
+        endereco = st.text_input("LOGRADOURO", value=st.session_state["endereco_capturado"])
         
         c_num, c_comp = st.columns([1, 2])
         numero = c_num.text_input("NÚMERO", placeholder="Nº")
@@ -261,10 +224,10 @@ def tela_registro():
         risco = st.selectbox("GRAU DE RISCO", ["BAIXO", "MÉDIO", "ALTO", "CRÍTICO"])
         
         c_data, c_hora = st.columns(2)
-        data_ocorrencia = c_data.date_input("DATA DO REGISTRO")
+        data_ocorrencia = c_data.date_input("DATA")
         hora_ocorrencia = c_hora.time_input("HORA")
         
-        encaminhamento = st.selectbox("ÓRGÃO DE ENCAMINHAMENTO", ["Aguardando Triagem", "Polícia Militar", "Corpo de Bombeiros", "Defesa Civil Municipal"])
+        encaminhamento = st.selectbox("ENCAMINHAMENTO", ["Aguardando Triagem", "Polícia Militar", "Corpo de Bombeiros", "Defesa Civil Municipal"])
         
         if st.button("SALVAR OCORRÊNCIA", type="primary", use_container_width=True):
             if not bairro or not endereco: st.warning("Preencha Bairro e Logradouro.")
@@ -276,7 +239,8 @@ def tela_registro():
                 try:
                     obter_referencia("ocorrencias").push(novo_registro)
                     st.success("Salvo com sucesso!"); st.balloons()
-                    carregar_dados.clear(); st.session_state["endereco_capturado"] = ""; st.session_state["lat_capturada"] = None
+                    carregar_dados.clear(); st.session_state["endereco_capturado"] = ""; st.session_state["lat_capturada"] = None; st.session_state["lon_capturada"] = None
+                    st.rerun()
                 except Exception as e: st.error(f"Erro: {e}")
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -287,11 +251,10 @@ def tela_registro():
         c_and.metric("EM ANDAMENTO", "0")
         c_fin.metric("FINALIZADOS", "0")
         st.write("---")
-        st.markdown("<div style='font-size: 13px; font-weight: bold; color: #FFF; background: #0B0B2A; padding: 10px; border-radius: 4px; border: 1px solid #4A4A8C;'>TIPO &nbsp;&nbsp;&nbsp; RISCO &nbsp;&nbsp;&nbsp; STATUS &nbsp;&nbsp;&nbsp; AÇÃO</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size: 11px; font-weight: bold; color: #FFF; background: #0B0B2A; padding: 10px; border-radius: 4px; border: 1px solid #4A4A8C;'>TIPO &nbsp;&nbsp;&nbsp; RISCO &nbsp;&nbsp;&nbsp; STATUS &nbsp;&nbsp;&nbsp; AÇÃO</div>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
 def tela_dashboard():
-    aplicar_barra_superior_nativa()
     df = carregar_dados()
     if df.empty: st.info("Sincronizando banco de dados..."); return
 
@@ -299,7 +262,7 @@ def tela_dashboard():
     with col_v: 
         if st.button("⬅ VOLTAR", type="secondary", use_container_width=True): navegar("hub")
     with col_t: 
-        st.markdown("<div class='barra-superior-texto'>PAINEL DE ATENDIMENTO DO CALL CENTER - DEFESA CIVIL DO ESTADO DO AMAZONAS</div>", unsafe_allow_html=True)
+        st.markdown("<div class='barra-superior'>PAINEL TÁTICO - MONITORAMENTO DE OCORRÊNCIAS</div>", unsafe_allow_html=True)
 
     st.markdown("<div class='card-escuro'>", unsafe_allow_html=True)
     c_f1, c_f2, c_f3, c_f4, c_f5 = st.columns(5)
@@ -313,7 +276,7 @@ def tela_dashboard():
     df_f = df.copy()
     if f_tipo != "Todas": df_f = df_f[df_f['tipo'] == f_tipo]
     if f_mun != "Todas": df_f = df_f[df_f['municipio'] == f_mun]
-    if f_bairro != "Todos": df_f = df_f[df_f['bairro'] == f_bairro]
+    if f_bairro != "Todas": df_f = df_f[df_f['bairro'] == f_bairro]
     if f_ano != "Todas": df_f = df_f[df_f['Ano_Filtro'] == f_ano]
     if f_mes != "Todas": df_f = df_f[df_f['Mes_Filtro'] == f_mes]
 
@@ -322,11 +285,11 @@ def tela_dashboard():
         c_nat, c_enc = st.columns(2)
         with c_nat:
             st.markdown("<div class='card-escuro'><div class='titulo-cartao'>NATUREZA</div>", unsafe_allow_html=True)
-            st.dataframe(df_f['tipo_emoji'].value_counts().reset_index(), hide_index=True, use_container_width=True, height=220)
+            st.dataframe(df_f['tipo_emoji'].value_counts().reset_index(), hide_index=True, use_container_width=True, height=200)
             st.markdown("</div>", unsafe_allow_html=True)
         with c_enc:
             st.markdown("<div class='card-escuro'><div class='titulo-cartao'>ENCAMINHAMENTO</div>", unsafe_allow_html=True)
-            st.dataframe(df_f['encaminhamento'].value_counts().reset_index(), hide_index=True, use_container_width=True, height=220)
+            st.dataframe(df_f['encaminhamento'].value_counts().reset_index(), hide_index=True, use_container_width=True, height=200)
             st.markdown("</div>", unsafe_allow_html=True)
             
         c_tot, c_piz = st.columns([1, 1.5])
@@ -337,20 +300,21 @@ def tela_dashboard():
         with c_piz:
             st.markdown("<div class='card-escuro'><div class='titulo-cartao'>Risco</div>", unsafe_allow_html=True)
             fig_pie = px.pie(df_f['risco_padrao'].value_counts().reset_index(), values='count', names='risco_padrao', hole=0.4, color='risco_padrao', color_discrete_map=CORES_RISCO_HEX)
-            fig_pie.update_layout(height=160, margin=dict(t=0, b=0, l=0, r=0), showlegend=True, paper_bgcolor='rgba(0,0,0,0)', font=dict(color='white'))
+            fig_pie.update_layout(height=140, margin=dict(t=0, b=0, l=0, r=0), showlegend=True, paper_bgcolor='rgba(0,0,0,0)', font=dict(color='white'))
             st.plotly_chart(fig_pie, use_container_width=True, theme=None)
             st.markdown("</div>", unsafe_allow_html=True)
 
     with col_dir:
         st.markdown("<div class='card-escuro'>", unsafe_allow_html=True)
         st.markdown("<div class='titulo-cartao'>Mapa Operacional</div>", unsafe_allow_html=True)
-        m = folium.Map(location=[-3.119, -60.021], zoom_start=11.5, tiles="CartoDB dark_matter") 
+        # Mapa Claro (Positron) no Dashboard
+        m = folium.Map(location=[-3.119, -60.021], zoom_start=11.5, tiles="CartoDB positron") 
         for _, row in df_f.iterrows():
             try:
                 lat, lon = float(row['latitude']), float(row['longitude'])
                 folium.Marker([lat, lon], tooltip=row.get('tipo', 'Ocorrência'), icon=folium.Icon(color=CORES_RISCO_PINO.get(row.get('risco_padrao', 'MÉDIO'), 'gray'))).add_to(m)
             except: continue
-        st_folium(m, use_container_width=True, height=350)
+        st_folium(m, use_container_width=True, height=300)
         st.markdown("</div><br>", unsafe_allow_html=True)
         
         st.markdown("<div class='card-escuro'><div class='titulo-cartao'>Registros por Mês</div>", unsafe_allow_html=True)
@@ -358,17 +322,16 @@ def tela_dashboard():
         if not df_g.empty:
             fig_bar = px.bar(df_g['Mes_Filtro'].value_counts().reset_index().sort_values(by='Mes_Filtro'), x='Mes_Filtro', y='count')
             fig_bar.update_traces(marker_color='#FFFFFF') 
-            fig_bar.update_layout(height=140, margin=dict(t=0, b=0, l=0, r=0), xaxis_title=None, yaxis_title=None, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color='white'))
+            fig_bar.update_layout(height=120, margin=dict(t=0, b=0, l=0, r=0), xaxis_title=None, yaxis_title=None, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color='white'))
             st.plotly_chart(fig_bar, use_container_width=True, theme=None)
         st.markdown("</div>", unsafe_allow_html=True)
 
 def tela_admin():
-    aplicar_barra_superior_nativa()
     col_v, col_t = st.columns([1, 10])
     with col_v: 
         if st.button("⬅ VOLTAR", type="secondary", use_container_width=True): navegar("hub")
     with col_t: 
-        st.markdown("<div class='barra-superior-texto'><span style='color: #FF4444;'>PAINEL DO ADMINISTRADOR DE SISTEMAS</span></div>", unsafe_allow_html=True)
+        st.markdown("<div class='barra-superior' style='background-color: #8B0000; border-color: #FF0000;'>PAINEL DO ADMINISTRADOR DE SISTEMAS</div>", unsafe_allow_html=True)
     
     df = carregar_dados()
     if df.empty: st.info("Banco vazio."); return
