@@ -1,6 +1,6 @@
 """
 SISTEMA INTEGRADO DE GESTÃO DA DEFESA CIVIL
-Versão 2.1 - Refatoração Institucional Otimizada
+Versão 3.0 - Monitoramento de Turno e Mapa Avançado
 Autor: Defesa Civil AM / DTI
 """
 
@@ -11,6 +11,8 @@ from streamlit_folium import st_folium
 import plotly.express as px
 from datetime import datetime
 import requests
+import socket
+import time
 from core.database import obter_referencia
 
 # =============================================================================
@@ -25,10 +27,17 @@ CREDENCIAIS = {
 
 CORES_RISCO_HEX = {'ALTO': '#F97316', 'MÉDIO': '#EAB308', 'MEDIO': '#EAB308', 'BAIXO': '#22C55E', 'CRÍTICO': '#EF4444', 'CRITICO': '#EF4444'}
 CORES_RISCO_PINO = {'ALTO': 'orange', 'MÉDIO': 'beige', 'MEDIO': 'beige', 'BAIXO': 'green', 'CRÍTICO': 'red', 'CRITICO': 'red'}
+EMOJIS_TIPO = {
+    'Alagamento': '🌊',
+    'Incêndio': '🔥',
+    'Deslizamento': '⛰️',
+    'Desabamento': '🏚️',
+    'Outros': '📝'
+}
 ASSETS_URL = "https://raw.githubusercontent.com/EBRlock/dashboard-defesa-civil/main/assets/logo_defesa.png"
 
 # =============================================================================
-# INICIALIZAÇÃO DA SESSÃO (Memória do Mapa Adicionada)
+# INICIALIZAÇÃO DA SESSÃO
 # =============================================================================
 def inicializar_sessao():
     defaults = {
@@ -37,8 +46,13 @@ def inicializar_sessao():
         "endereco_capturado": "",
         "lat_capturada": None,
         "lon_capturada": None,
-        "map_center": [-3.119, -60.021], # Memória do centro do mapa
-        "map_zoom": 12 # Memória do zoom do mapa
+        "map_center": [-3.119, -60.021],
+        "map_zoom": 12,
+        "ocorrencias_sessao": [],          # Lista de ocorrências do turno atual
+        "cont_andamento": 0,
+        "cont_finalizado": 0,
+        "ultima_busca_coord": None,        # Para manter o marcador de busca
+        "conexao_verificada": None          # Cache da verificação de internet
     }
     for chave, valor in defaults.items():
         if chave not in st.session_state:
@@ -60,10 +74,39 @@ def adicionar_emoji_natureza(tipo: str) -> str:
 def buscar_endereco_por_coordenada(lat: float, lon: float) -> str:
     try:
         url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}"
-        headers = {'User-Agent': 'DefesaCivilAM/2.0'}
+        headers = {'User-Agent': 'DefesaCivilAM/3.0'}
         resposta = requests.get(url, headers=headers, timeout=5).json()
         return resposta.get('display_name', 'Endereço não encontrado')
-    except Exception: return ""
+    except Exception:
+        return ""
+
+def pesquisar_endereco(query: str):
+    """Busca coordenadas a partir de um endereço e retorna (lat, lon, display_name) ou None"""
+    try:
+        url = f"https://nominatim.openstreetmap.org/search?format=json&q={query}"
+        headers = {'User-Agent': 'DefesaCivilAM/3.0'}
+        resposta = requests.get(url, headers=headers, timeout=5).json()
+        if resposta:
+            lat = float(resposta[0]['lat'])
+            lon = float(resposta[0]['lon'])
+            display = resposta[0]['display_name']
+            return lat, lon, display
+    except Exception:
+        pass
+    return None
+
+def verificar_conexao():
+    """Verifica se há acesso à internet (cache por 30 segundos)"""
+    if st.session_state["conexao_verificada"] is not None:
+        if time.time() - st.session_state["conexao_verificada"][1] < 30:
+            return st.session_state["conexao_verificada"][0]
+    try:
+        socket.create_connection(("8.8.8.8", 53), timeout=3)
+        st.session_state["conexao_verificada"] = (True, time.time())
+        return True
+    except OSError:
+        st.session_state["conexao_verificada"] = (False, time.time())
+        return False
 
 @st.cache_data(ttl=15)
 def carregar_dados() -> pd.DataFrame:
@@ -83,7 +126,7 @@ def carregar_dados() -> pd.DataFrame:
             if col not in df.columns: df[col] = padrao
 
         df['tipo_emoji'] = df['tipo'].apply(adicionar_emoji_natureza)
-        df['encaminhamento'] = df['encaminhamento'].astype(str).str.strip() # Correção do Dashboard
+        df['encaminhamento'] = df['encaminhamento'].astype(str).str.strip()
         df['risco_padrao'] = df['risco'].astype(str).str.strip().str.upper()
         df['data_dt'] = pd.to_datetime(df['data'], errors='coerce', dayfirst=True)
         df['Ano_Filtro'] = df['data_dt'].dt.year.fillna(0).astype(int).astype(str).replace('0', 'Desconhecido')
@@ -99,7 +142,7 @@ def navegar(rota: str):
     st.rerun()
 
 # =============================================================================
-# ESTILOS CSS INSTITUCIONAIS (Intacto)
+# ESTILOS CSS INSTITUCIONAIS (idêntico ao anterior, mas com ajustes para os novos elementos)
 # =============================================================================
 def aplicar_css_global():
     st.markdown("""
@@ -130,10 +173,36 @@ def aplicar_css_global():
         div.stButton > button[kind="primary"] { background-color: #FF8C00 !important; color: #FFFFFF !important; font-weight: 700 !important; border: none !important; border-radius: 8px !important; height: 3rem !important; box-shadow: 0 4px 10px rgba(255,140,0,0.3); }
         div.stButton > button[kind="primary"]:hover { background-color: #E67E00 !important; }
         
+        /* Botão finalizar (pequeno) */
+        .botao-finalizar {
+            background-color: #1976D2 !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 4px !important;
+            padding: 5px 10px !important;
+            font-size: 0.8rem !important;
+            font-weight: bold !important;
+            cursor: pointer;
+            width: 100%;
+        }
+        .botao-finalizar:hover { background-color: #1565C0 !important; }
+        .botao-finalizar:disabled { background-color: #E0E0E0 !important; color: #888 !important; }
+        
         div[data-testid="metric-container"] { background-color: rgba(255,255,255,0.05) !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 10px !important; padding: 0.8rem !important; text-align: center; }
         div[data-testid="stMetricValue"] > div { color: #FF8C00 !important; font-size: 2rem !important; font-weight: 900 !important; }
         [data-testid="stDataFrame"] { background-color: #1E1E3F !important; border-radius: 8px; }
         hr { border-color: rgba(255,255,255,0.2) !important; margin: 1rem 0 !important; }
+        
+        /* Estilo para os itens do monitoramento */
+        .linha-monitor {
+            background-color: rgba(255,255,255,0.05);
+            border-radius: 4px;
+            padding: 0.5rem;
+            margin-bottom: 0.3rem;
+            border-left: 3px solid;
+        }
+        .status-andamento { color: #F57C00; font-weight: bold; }
+        .status-finalizado { color: #2E7D32; font-weight: bold; }
         </style>
     """, unsafe_allow_html=True)
 
@@ -146,7 +215,6 @@ def cabecalho_com_voltar(titulo: str, rota_destino: str = "hub", is_dashboard=Fa
         if st.button("⬅ VOLTAR", type="secondary", use_container_width=True): navegar(rota_destino)
     with col_titulo:
         if is_dashboard:
-            # Insere o botão de exportar PDF via Javascript (Impressão) no Dashboard
             html_barra = f"""
             <div class='barra-superior'>
                 <span>{titulo}</span>
@@ -165,11 +233,142 @@ def cartao(titulo: str, conteudo):
         st.markdown("</div>", unsafe_allow_html=True)
 
 # =============================================================================
+# FUNÇÕES DE MONITORAMENTO DE TURNO
+# =============================================================================
+def adicionar_ocorrencia_sessao(tipo, risco, lat, lon, endereco, id_firebase=None):
+    """Adiciona uma ocorrência à lista da sessão (turno atual)"""
+    ocorrencia = {
+        "id": len(st.session_state["ocorrencias_sessao"]),
+        "tipo": tipo,
+        "risco": risco,
+        "lat": lat,
+        "lon": lon,
+        "endereco": endereco,
+        "status": "Em andamento",
+        "firebase_id": id_firebase  # para possível atualização futura
+    }
+    st.session_state["ocorrencias_sessao"].append(ocorrencia)
+    st.session_state["cont_andamento"] += 1
+
+def finalizar_ocorrencia_sessao(indice):
+    """Muda status da ocorrência para 'Finalizado' e atualiza Firebase se houver ID"""
+    ocorrencia = st.session_state["ocorrencias_sessao"][indice]
+    if ocorrencia["status"] == "Em andamento":
+        ocorrencia["status"] = "Finalizado"
+        st.session_state["cont_andamento"] -= 1
+        st.session_state["cont_finalizado"] += 1
+        # Se tiver ID no Firebase, atualiza lá também
+        if ocorrencia.get("firebase_id"):
+            try:
+                ref = obter_referencia(f"ocorrencias/{ocorrencia['firebase_id']}")
+                ref.update({"status": "Finalizado"})
+            except Exception as e:
+                st.warning(f"Erro ao atualizar Firebase: {e}")
+
+def renderizar_monitoramento_turno():
+    """Exibe os contadores e a lista de ocorrências da sessão com botões Finalizar"""
+    st.markdown(f"<div class='card-escuro'>", unsafe_allow_html=True)
+    st.markdown("<div class='titulo-cartao'>MONITORAMENTO DO TURNO</div>", unsafe_allow_html=True)
+    
+    # Placar
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("EM ANDAMENTO", st.session_state["cont_andamento"])
+    with col2:
+        st.metric("FINALIZADOS", st.session_state["cont_finalizado"])
+    
+    st.markdown("---")
+    
+    # Cabeçalho da tabela
+    cabecalho = st.columns([2, 1, 1.5, 1])
+    cabecalho[0].markdown("**TIPO**")
+    cabecalho[1].markdown("**RISCO**")
+    cabecalho[2].markdown("**STATUS**")
+    cabecalho[3].markdown("**AÇÃO**")
+    
+    # Lista de ocorrências
+    if not st.session_state["ocorrencias_sessao"]:
+        st.info("Nenhuma ocorrência registrada no turno.")
+    else:
+        for i, occ in enumerate(st.session_state["ocorrencias_sessao"]):
+            cols = st.columns([2, 1, 1.5, 1])
+            with cols[0]:
+                emoji = EMOJIS_TIPO.get(occ['tipo'], '📍')
+                st.write(f"{emoji} {occ['tipo']}")
+            with cols[1]:
+                risco = occ['risco']
+                cor = CORES_RISCO_HEX.get(risco.upper(), '#FFFFFF')
+                st.markdown(f"<span style='color:{cor}; font-weight:bold;'>{risco}</span>", unsafe_allow_html=True)
+            with cols[2]:
+                status = occ['status']
+                if status == "Em andamento":
+                    st.markdown("<span class='status-andamento'>EM ANDAMENTO</span>", unsafe_allow_html=True)
+                else:
+                    st.markdown("<span class='status-finalizado'>FINALIZADO</span>", unsafe_allow_html=True)
+            with cols[3]:
+                if status == "Em andamento":
+                    if st.button("FINALIZAR", key=f"fin_{i}", help="Finalizar ocorrência"):
+                        finalizar_ocorrencia_sessao(i)
+                        st.rerun()
+                else:
+                    st.button("FINALIZADO", disabled=True, key=f"fin_disabled_{i}")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# =============================================================================
+# FUNÇÃO PARA CRIAR MAPA FOLIUM COM MARCADORES DA SESSÃO E DE BUSCA
+# =============================================================================
+def criar_mapa_registro():
+    """Gera mapa Folium com marcadores de busca (azul) e ocorrências da sessão"""
+    # Centro inicial: último centro salvo ou padrão
+    center = st.session_state["map_center"]
+    zoom = st.session_state["map_zoom"]
+    
+    m = folium.Map(location=center, zoom_start=zoom, tiles="CartoDB positron")
+    
+    # Marcador de busca (se houver coordenada de busca)
+    if st.session_state["lat_capturada"] and st.session_state["lon_capturada"]:
+        folium.Marker(
+            [st.session_state["lat_capturada"], st.session_state["lon_capturada"]],
+            popup="Ponto selecionado",
+            icon=folium.Icon(color="blue", icon="info-sign")
+        ).add_to(m)
+    
+    # Marcadores das ocorrências da sessão
+    for occ in st.session_state["ocorrencias_sessao"]:
+        lat = occ["lat"]
+        lon = occ["lon"]
+        if lat and lon:
+            # Cor conforme status
+            cor = "#F57C00" if occ["status"] == "Em andamento" else "#2E7D32"
+            # Círculo de raio
+            folium.Circle(
+                radius=250,
+                location=[lat, lon],
+                color=cor,
+                fill=True,
+                fillOpacity=0.2,
+                weight=2
+            ).add_to(m)
+            # Marcador com emoji
+            emoji = EMOJIS_TIPO.get(occ['tipo'], '📍')
+            html = f"""
+            <div style="font-size: 24px; background-color: white; border-radius: 50%; padding: 5px; border: 3px solid {cor}; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                {emoji}
+            </div>
+            """
+            folium.Marker(
+                [lat, lon],
+                popup=f"<b>{occ['tipo']}</b><br>Status: {occ['status']}",
+                icon=folium.DivIcon(html=html)
+            ).add_to(m)
+    
+    return m
+
+# =============================================================================
 # TELAS DO SISTEMA
 # =============================================================================
 def tela_login():
     with st.container():
-        # Centralização exata com colunas proporcionais
         _, col_centro, _ = st.columns([1, 1, 1])
         with col_centro:
             st.markdown("<div class='card-escuro' style='margin-top: 15vh; text-align: center;'>", unsafe_allow_html=True)
@@ -200,123 +399,175 @@ def tela_hub():
 
         if st.button("📝 REGISTRAR OCORRÊNCIA", type="secondary", use_container_width=True): navegar("registro")
         if st.button("📊 PAINEL DE MONITORAMENTO", type="secondary", use_container_width=True): navegar("dashboard")
-        
-        # Botão Administrativo removido conforme solicitado
-
         st.write("")
         if st.button("ENCERRAR SESSÃO", type="primary", use_container_width=True):
-            st.session_state["autenticado"] = False; navegar("login")
+            st.session_state["autenticado"] = False
+            # Limpar dados da sessão (opcional)
+            st.session_state["ocorrencias_sessao"] = []
+            st.session_state["cont_andamento"] = 0
+            st.session_state["cont_finalizado"] = 0
+            navegar("login")
         st.markdown("</div>", unsafe_allow_html=True)
 
 def tela_registro():
     cabecalho_com_voltar("CENTRAL DE MONITORAMENTO - REGISTRO E DESPACHO")
 
-    col_form, col_meio, col_mapa = st.columns([1.5, 1, 2.5])
+    col_form, col_monitor, col_mapa = st.columns([1.5, 1.5, 2.5])
 
-    # MAPA COM PRESERVAÇÃO DE ESTADO
+    # --- COLUNA MAPA (interativo) ---
     with col_mapa:
         def _conteudo_mapa():
-            st.markdown("<p style='font-weight:600;'>📍 Toque no mapa para capturar a coordenada</p>", unsafe_allow_html=True)
+            st.markdown("<p style='font-weight:600;'>📍 Clique no mapa para capturar coordenada</p>")
             
-            # Carrega o mapa nas coordenadas memorizadas na sessão (Evita o resize/reset do zoom)
-            m_registro = folium.Map(location=st.session_state["map_center"], zoom_start=st.session_state["map_zoom"], tiles="CartoDB positron")
-
-            if st.session_state["lat_capturada"] and st.session_state["lon_capturada"]:
-                folium.Marker([st.session_state["lat_capturada"], st.session_state["lon_capturada"]], icon=folium.Icon(color="red", icon="map-marker")).add_to(m_registro)
-
-            mapa_clicado = st_folium(m_registro, height=520, use_container_width=True, key="mapa_novo")
-
+            # Botão de busca de endereço
+            with st.expander("🔍 Buscar endereço", expanded=False):
+                busca = st.text_input("Digite o endereço", key="busca_endereco", label_visibility="collapsed")
+                if st.button("Buscar no mapa", use_container_width=True):
+                    if busca:
+                        resultado = pesquisar_endereco(busca)
+                        if resultado:
+                            lat, lon, display = resultado
+                            st.session_state["lat_capturada"] = lat
+                            st.session_state["lon_capturada"] = lon
+                            st.session_state["endereco_capturado"] = display
+                            st.session_state["map_center"] = [lat, lon]
+                            st.session_state["map_zoom"] = 17
+                            st.rerun()
+                        else:
+                            st.warning("Endereço não encontrado")
+            
+            # Gera o mapa com estado atual
+            m = criar_mapa_registro()
+            mapa_clicado = st_folium(m, height=500, use_container_width=True, key="mapa_registro")
+            
+            # Processa clique no mapa
             if mapa_clicado and mapa_clicado.get("last_clicked"):
-                lat, lon = mapa_clicado["last_clicked"]["lat"], mapa_clicado["last_clicked"]["lng"]
-                
-                # Salva o estado atual do mapa para ele não se mover
-                st.session_state["map_center"] = [mapa_clicado["center"]["lat"], mapa_clicado["center"]["lng"]]
-                st.session_state["map_zoom"] = mapa_clicado["zoom"]
+                lat = mapa_clicado["last_clicked"]["lat"]
+                lon = mapa_clicado["last_clicked"]["lng"]
+                # Salva centro/zoom
+                if mapa_clicado.get("center"):
+                    st.session_state["map_center"] = [mapa_clicado["center"]["lat"], mapa_clicado["center"]["lng"]]
+                if mapa_clicado.get("zoom"):
+                    st.session_state["map_zoom"] = mapa_clicado["zoom"]
                 
                 if lat != st.session_state["lat_capturada"]:
-                    st.session_state["lat_capturada"] = lat; st.session_state["lon_capturada"] = lon
+                    st.session_state["lat_capturada"] = lat
+                    st.session_state["lon_capturada"] = lon
                     st.session_state["endereco_capturado"] = buscar_endereco_por_coordenada(lat, lon)
                     st.rerun()
+            
+            if st.session_state["lat_capturada"]:
+                st.success("✅ GPS capturado")
+        cartao("MAPA TÁTICO", _conteudo_mapa)
 
-            if st.session_state["lat_capturada"]: st.success("✅ GPS capturado com sucesso!")
-        cartao("MAPA DE CAPTURA", _conteudo_mapa)
-
-    # FORMULÁRIO COM CHECKBOXES E STATUS
+    # --- COLUNA FORMULÁRIO ---
     with col_form:
         def _conteudo_form():
+            # SOLICITANTE
             solicitante = st.text_input("SOLICITANTE", placeholder="Nome completo")
             municipio = st.text_input("MUNICÍPIO", value="Manaus")
             bairro = st.text_input("BAIRRO", placeholder="Bairro da ocorrência")
-            endereco = st.text_input("LOGRADOURO", value=st.session_state["endereco_capturado"])
-
-            # Checkboxes integrados de Número e Complemento
-            c_num, c_comp = st.columns([1, 2])
-            with c_num:
-                sem_numero = st.checkbox("Sem número", key="chk_num")
-                numero = st.text_input("NÚMERO", placeholder="Nº", disabled=sem_numero)
-            with c_comp:
-                sem_comp = st.checkbox("Sem complemento", key="chk_comp")
-                complemento = st.text_input("COMPLEMENTO", placeholder="Ex: Apto 101", disabled=sem_comp)
-
-            c_nat, c_ris = st.columns(2)
-            natureza = c_nat.selectbox("NATUREZA DA OCORRÊNCIA", ["Alagamento", "Incêndio", "Deslizamento", "Desabamento", "Outros"])
-            risco = c_ris.selectbox("GRAU DE RISCO", ["BAIXO", "MÉDIO", "ALTO", "CRÍTICO"])
-
-            c_data, c_hora = st.columns(2)
-            data_ocorrencia = c_data.date_input("DATA", datetime.now())
-            hora_ocorrencia = c_hora.time_input("HORA", datetime.now().time())
-
-            # Status Adicionado para o Painel Funcionar
-            status_op = st.selectbox("STATUS DA OCORRÊNCIA", ["Em andamento", "Finalizado"])
+            endereco = st.text_input("LOGRADOURO", value=st.session_state["endereco_capturado"], key="logradouro")
+            
+            # Número com checkbox "Sem número"
+            col_num, col_chk_num = st.columns([2, 1])
+            with col_num:
+                numero = st.text_input("NÚMERO", placeholder="Nº", disabled=st.session_state.get("sem_numero", False))
+            with col_chk_num:
+                sem_numero = st.checkbox("Sem número", key="sem_numero", help="Marcar se não houver número")
+            
+            # Complemento com checkbox "Sem complemento"
+            col_comp, col_chk_comp = st.columns([2, 1])
+            with col_comp:
+                complemento = st.text_input("COMPLEMENTO", placeholder="Ex: Apto 101", disabled=st.session_state.get("sem_complemento", False))
+            with col_chk_comp:
+                sem_complemento = st.checkbox("Sem compl.", key="sem_complemento")
+            
+            # Natureza e risco
+            col_nat, col_ris = st.columns(2)
+            natureza = col_nat.selectbox("NATUREZA", ["Alagamento", "Incêndio", "Deslizamento", "Desabamento", "Outros"])
+            risco = col_ris.selectbox("GRAU DE RISCO", ["BAIXO", "MÉDIO", "ALTO", "CRÍTICO"])
+            
+            # Data e hora (pré-preenchidas)
+            agora = datetime.now()
+            col_data, col_hora = st.columns(2)
+            data_occ = col_data.date_input("DATA", agora)
+            hora_occ = col_hora.time_input("HORA", agora.time())
+            
+            # Encaminhamento
             encaminhamento = st.selectbox("ENCAMINHAMENTO", ["Aguardando Triagem", "Polícia Militar", "Corpo de Bombeiros", "Defesa Civil Municipal"])
-
+            
             if st.button("SALVAR OCORRÊNCIA", type="primary", use_container_width=True):
-                if not bairro or not endereco: st.warning("Preencha o bairro e o logradouro.")
-                elif not st.session_state["lat_capturada"]: st.warning("Toque no mapa para capturar a coordenada GPS!")
+                # Validações
+                if not bairro or not endereco:
+                    st.warning("Preencha bairro e logradouro.")
+                elif not st.session_state["lat_capturada"]:
+                    st.warning("Clique no mapa para capturar a coordenada.")
                 else:
-                    num_final = "S/N" if sem_numero else numero
-                    comp_final = "" if sem_comp else f" - {complemento}"
+                    # Verifica conexão
+                    if not verificar_conexao():
+                        st.error("Sem conexão com a internet. Verifique a rede do quartel.")
+                        return
+                    
+                    # Monta endereço completo
+                    num_final = "S/N" if sem_numero else (numero if numero else "")
+                    comp_final = "" if sem_complemento else (f" - {complemento}" if complemento else "")
                     end_completo = f"{endereco}, {num_final}{comp_final}".strip(" ,-")
                     
-                    novo_registro = {
-                        "tipo": natureza, "municipio": municipio, "bairro": bairro, "endereco": end_completo,
-                        "risco": risco, "encaminhamento": encaminhamento, "data": data_ocorrencia.strftime("%d/%m/%Y"),
-                        "solicitante": solicitante, "status": status_op, 
-                        "latitude": st.session_state["lat_capturada"], "longitude": st.session_state["lon_capturada"]
+                    dados = {
+                        "tipo": natureza,
+                        "municipio": municipio,
+                        "bairro": bairro,
+                        "endereco": end_completo,
+                        "risco": risco,
+                        "encaminhamento": encaminhamento,
+                        "data": data_occ.strftime("%d/%m/%Y"),
+                        "hora": hora_occ.strftime("%H:%M:%S"),
+                        "solicitante": solicitante,
+                        "status": "Em andamento",
+                        "latitude": st.session_state["lat_capturada"],
+                        "longitude": st.session_state["lon_capturada"],
+                        "operador": "Operador"  # Poderia vir da sessão
                     }
                     try:
-                        obter_referencia("ocorrencias").push(novo_registro)
-                        st.success("Ocorrência salva com sucesso!"); st.balloons(); carregar_dados.clear()
-                        st.session_state["endereco_capturado"] = ""; st.session_state["lat_capturada"] = None; st.session_state["lon_capturada"] = None
+                        # Salva no Firebase
+                        ref = obter_referencia("ocorrencias")
+                        novo_reg = ref.push(dados)
+                        firebase_id = novo_reg.key
+                        
+                        # Adiciona ao monitoramento da sessão
+                        adicionar_ocorrencia_sessao(
+                            tipo=natureza,
+                            risco=risco,
+                            lat=st.session_state["lat_capturada"],
+                            lon=st.session_state["lon_capturada"],
+                            endereco=end_completo,
+                            id_firebase=firebase_id
+                        )
+                        
+                        st.success("Ocorrência salva com sucesso!")
+                        st.balloons()
+                        
+                        # Limpa campos de captura (mantém o mapa na mesma posição)
+                        st.session_state["endereco_capturado"] = ""
+                        st.session_state["lat_capturada"] = None
+                        st.session_state["lon_capturada"] = None
+                        # Recarrega para limpar o formulário
                         st.rerun()
-                    except Exception as e: st.error(f"Erro ao salvar: {e}")
+                    except Exception as e:
+                        st.error(f"Erro ao salvar: {e}")
         cartao("DADOS CADASTRAIS", _conteudo_form)
 
-    # MONITORAMENTO DO TURNO DINÂMICO
-    with col_meio:
-        def _conteudo_monitoramento():
-            df = carregar_dados()
-            hoje = datetime.now().strftime("%d/%m/%Y")
-            
-            # Filtra apenas ocorrências de hoje e conta os status
-            qtd_andamento, qtd_finalizados = 0, 0
-            if not df.empty and 'status' in df.columns:
-                df_hoje = df[df['data'] == hoje]
-                qtd_andamento = len(df_hoje[df_hoje['status'] == 'Em andamento'])
-                qtd_finalizados = len(df_hoje[df_hoje['status'] == 'Finalizado'])
-
-            c_and, c_fin = st.columns(2)
-            c_and.metric("EM ANDAMENTO", qtd_andamento)
-            c_fin.metric("FINALIZADOS", qtd_finalizados)
-            st.markdown("---")
-            st.markdown("<div style='font-size:0.8rem; background:#1E1E3F; padding:0.5rem; border-radius:6px;'><b>TIPO</b> &nbsp;&nbsp; <b>RISCO</b> &nbsp;&nbsp; <b>STATUS</b> &nbsp;&nbsp; <b>AÇÃO</b></div>", unsafe_allow_html=True)
-        cartao("MONITORAMENTO DO TURNO", _conteudo_monitoramento)
+    # --- COLUNA MONITORAMENTO (turno) ---
+    with col_monitor:
+        renderizar_monitoramento_turno()
 
 def tela_dashboard():
     df = carregar_dados()
-    if df.empty: st.info("Sincronizando base de dados..."); return
+    if df.empty:
+        st.info("Sincronizando base de dados...")
+        return
 
-    # Flag True para adicionar o botão de PDF nativo na barra superior
     cabecalho_com_voltar("PAINEL TÁTICO - MONITORAMENTO DE OCORRÊNCIAS", is_dashboard=True)
 
     with st.container():
@@ -342,7 +593,6 @@ def tela_dashboard():
         def _graf_natureza(): st.dataframe(df_filtrado['tipo_emoji'].value_counts().reset_index(), hide_index=True, use_container_width=True, height=200)
         cartao("NATUREZA", _graf_natureza)
 
-        # Encaminhamento Corrigido
         def _graf_encaminhamento(): st.dataframe(df_filtrado['encaminhamento'].value_counts().reset_index(), hide_index=True, use_container_width=True, height=200)
         cartao("ENCAMINHAMENTO", _graf_encaminhamento)
 
