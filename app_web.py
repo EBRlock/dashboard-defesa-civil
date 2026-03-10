@@ -75,92 +75,103 @@ def carregar_dados():
         return pd.DataFrame()
 
 # ==========================================
-# 4. CSS GLOBAL UNIFICADO (BRANCO E AZUL MARINHO)
+# 4. CSS GLOBAL E DA BARRA SUPERIOR
 # ==========================================
 def aplicar_css_global():
     st.markdown("""
         <style>
         #MainMenu {visibility: hidden;} header {visibility: hidden;} footer {visibility: hidden;}
         
+        /* Previne barra de rolagem horizontal pelo truque da barra superior */
+        [data-testid="stAppViewContainer"] { overflow-x: hidden; }
+        
         /* Fundo Oficial Azul Marinho */
         .stApp { background-color: #19194D !important; }
         .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; max-width: 98% !important; }
         
-        /* Todos os Textos em Branco (Removido o Laranja) */
+        /* Textos e Fontes */
         h1, h2, h3, h4, p, label, .stMarkdown { color: #FFFFFF !important; font-family: 'Segoe UI', Arial, sans-serif !important; font-size: 16px !important; }
         .texto-destaque { color: #FFFFFF !important; font-weight: bold; font-size: 16px !important; letter-spacing: 1px;}
         
-        /* Barra Superior */
-        .barra-superior {
-            background-color: #0B0B2A; color: #FFFFFF; padding: 15px 20px; border-radius: 6px;
-            font-weight: 800; font-size: 20px; text-transform: uppercase;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3); margin-bottom: 20px; border: 1px solid #4A4A8C;
-        }
-
         /* Cartões Translucidos */
         .card-escuro {
             background-color: rgba(255, 255, 255, 0.05) !important; border-radius: 8px; padding: 25px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1);
-            height: 100%;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); height: 100%;
         }
-        
-        /* Títulos dos cartões agora são BRANCOS */
-        .titulo-cartao { 
-            font-size: 15px; font-weight: 800; color: #FFFFFF !important; 
-            text-transform: uppercase; margin-bottom: 15px; 
-            border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 8px; 
-        }
+        .titulo-cartao { font-size: 15px; font-weight: 800; color: #FFFFFF !important; text-transform: uppercase; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 8px; }
 
-        /* ========================================================
-           CORREÇÃO DOS INPUTS INVISÍVEIS (Selectbox, Date, Time)
-           ======================================================== */
+        /* Correção Inputs */
         .stTextInput label p, .stSelectbox label p, .stDateInput label p, .stTimeInput label p { font-weight: 700 !important; color: #FFFFFF !important; }
-        
-        /* Fundo escuro e borda fina para as caixas */
-        input, div[data-baseweb="select"] > div {
-            background-color: #23235B !important; 
-            border: 1px solid #4A4A8C !important; border-radius: 6px !important;
-        }
-        
-        /* O SEGREDO: Força qualquer texto selecionado a ficar BRANCO */
-        input, div[data-baseweb="select"] * {
-            color: #FFFFFF !important; font-size: 16px !important;
-        }
-
-        /* Ajuste do Calendário para não sumir os dias */
+        input, div[data-baseweb="select"] > div { background-color: #23235B !important; border: 1px solid #4A4A8C !important; border-radius: 6px !important; }
+        input, div[data-baseweb="select"] * { color: #FFFFFF !important; font-size: 16px !important; }
         div[data-baseweb="calendar"] * { color: #000000 !important; }
         div[data-baseweb="calendar"] { background-color: #FFFFFF !important; }
-
-        /* Dropdown (Lista suspensa) */
         ul[data-baseweb="menu"] { background-color: #23235B !important; border: 1px solid #4A4A8C !important; }
         li[role="option"] { color: #FFFFFF !important; font-size: 15px !important; }
         li[role="option"]:hover { background-color: #4A4A8C !important; }
-
-        /* Compressão de Espaços */
         [data-testid="stVerticalBlock"] { gap: 0.6rem !important; }
 
-        /* Botões */
-        div.stButton > button[kind="secondary"] { 
-            background-color: #23235B !important; color: #FFFFFF !important; 
-            border: 1px solid #4A4A8C !important; font-weight: bold !important; height: 50px !important; font-size: 16px !important;
-        }
+        /* Botões Base */
+        div.stButton > button[kind="secondary"] { background-color: #23235B !important; color: #FFFFFF !important; border: 1px solid #4A4A8C !important; font-weight: bold !important; height: 50px !important; font-size: 16px !important; }
         div.stButton > button[kind="secondary"]:hover { background-color: #2D2D70 !important; border-color: #FFFFFF !important; }
-        
-        /* Botão Primário Laranja (Único elemento laranja da tela) */
-        div.stButton > button[kind="primary"] { 
-            background-color: #FF8C00 !important; color: #FFFFFF !important; 
-            border: none !important; font-weight: bold !important; height: 50px !important; margin-top: 15px !important; font-size: 18px !important;
-        }
+        div.stButton > button[kind="primary"] { background-color: #FF8C00 !important; color: #FFFFFF !important; border: none !important; font-weight: bold !important; height: 50px !important; margin-top: 15px !important; font-size: 18px !important; }
         div.stButton > button[kind="primary"]:hover { background-color: #E67E00 !important; }
         div.stButton > button[kind="primary"] p { color: #FFFFFF !important; font-size: 18px !important; font-weight: bold !important; }
         
-        /* Métricas Gigantes agora em Branco */
+        /* Métricas e Tabelas */
         div[data-testid="metric-container"] { background-color: rgba(255,255,255,0.05) !important; padding: 15px !important; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center; }
         div[data-testid="stMetricValue"] > div { color: #FFFFFF !important; font-size: 45px !important; font-weight: 900 !important; }
         div[data-testid="stMetricLabel"] > div p { color: #FFFFFF !important; font-size: 14px !important; font-weight: 600 !important; text-transform: uppercase; }
-        
-        /* Tabelas */
         [data-testid="stDataFrame"] { background-color: #23235B !important; border-radius: 6px; }
+        </style>
+    """, unsafe_allow_html=True)
+
+def aplicar_barra_superior_nativa():
+    """O Truque CSS que funde o Botão Voltar e o Título numa Barra de Ponta a Ponta"""
+    st.markdown("""
+        <style>
+        /* Zera o espaço em branco do topo da tela */
+        .block-container { padding-top: 0rem !important; }
+        
+        /* Transforma a PRIMEIRA linha de colunas na Barra Superior Esticada */
+        [data-testid="stHorizontalBlock"]:first-of-type {
+            background-color: #0B0B2A;
+            border-bottom: 2px solid #4A4A8C;
+            padding: 15px 5%; /* Padding lateral flexível */
+            
+            /* O Hack para quebrar o container e preencher 100% da largura */
+            width: 100vw;
+            position: relative;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw;
+            margin-right: -50vw;
+            
+            align-items: center; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            margin-bottom: 25px;
+            z-index: 99;
+        }
+        
+        /* Estiliza o Botão Voltar para nascer DENTRO da barra e combinar com ela */
+        [data-testid="stHorizontalBlock"]:first-of-type button {
+            background-color: #19194D !important;
+            border: 1px solid #4A4A8C !important;
+            color: #FFFFFF !important;
+            height: 42px !important;
+            margin: 0 !important;
+        }
+        [data-testid="stHorizontalBlock"]:first-of-type button:hover {
+            background-color: #FF8C00 !important; /* Feedback visual laranja ao passar o mouse */
+            border-color: #FF8C00 !important;
+        }
+        
+        /* O Título não precisa mais de caixa, ele herda o fundo da barra inteira */
+        .barra-superior-texto {
+            color: #FFFFFF;
+            font-weight: 800; font-size: 20px; text-transform: uppercase;
+            margin: 0; padding-left: 10px;
+        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -205,12 +216,16 @@ def tela_hub():
         st.markdown('</div>', unsafe_allow_html=True)
 
 def tela_registro():
+    aplicar_barra_superior_nativa() # Chama o CSS que estica a primeira linha
+    
+    # Esta linha 1 vira a Barra Superior
     col_v, col_t = st.columns([1, 10])
     with col_v: 
         if st.button("⬅ VOLTAR", type="secondary", use_container_width=True): navegar("hub")
     with col_t: 
-        st.markdown("<div class='barra-superior'>CENTRAL DE MONITORAMENTO - REGISTRO E DESPACHO</div>", unsafe_allow_html=True)
+        st.markdown("<div class='barra-superior-texto'>CENTRAL DE MONITORAMENTO - REGISTRO E DESPACHO</div>", unsafe_allow_html=True)
 
+    # Linha 2 (Conteúdo Real)
     col_form, col_meio, col_mapa = st.columns([1.3, 1, 2.5])
     
     with col_mapa:
@@ -220,16 +235,13 @@ def tela_registro():
         mapa_clicado = st_folium(m_registro, height=500, use_container_width=True, key="mapa_novo")
         
         if mapa_clicado and mapa_clicado.get("last_clicked"):
-            lat = mapa_clicado["last_clicked"]["lat"]
-            lon = mapa_clicado["last_clicked"]["lng"]
+            lat, lon = mapa_clicado["last_clicked"]["lat"], mapa_clicado["last_clicked"]["lng"]
             if lat != st.session_state["lat_capturada"]:
-                st.session_state["lat_capturada"] = lat
-                st.session_state["lon_capturada"] = lon
+                st.session_state["lat_capturada"] = lat; st.session_state["lon_capturada"] = lon
                 st.session_state["endereco_capturado"] = buscar_endereco_por_coordenada(lat, lon)
                 st.rerun() 
                 
-        if st.session_state["lat_capturada"]:
-            st.success("✅ GPS Capturado com sucesso!")
+        if st.session_state["lat_capturada"]: st.success("✅ GPS Capturado com sucesso!")
         st.markdown("</div>", unsafe_allow_html=True)
 
     with col_form:
@@ -239,7 +251,6 @@ def tela_registro():
         solicitante = st.text_input("SOLICITANTE", placeholder="Nome completo")
         municipio = st.text_input("MUNICÍPIO", value="Manaus")
         bairro = st.text_input("BAIRRO", placeholder="Bairro da ocorrência")
-        
         endereco = st.text_input("LOGRADOURO (RUA / AV)", value=st.session_state["endereco_capturado"])
         
         c_num, c_comp = st.columns([1, 2])
@@ -265,9 +276,7 @@ def tela_registro():
                 try:
                     obter_referencia("ocorrencias").push(novo_registro)
                     st.success("Salvo com sucesso!"); st.balloons()
-                    carregar_dados.clear()
-                    st.session_state["endereco_capturado"] = ""
-                    st.session_state["lat_capturada"] = None
+                    carregar_dados.clear(); st.session_state["endereco_capturado"] = ""; st.session_state["lat_capturada"] = None
                 except Exception as e: st.error(f"Erro: {e}")
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -282,6 +291,7 @@ def tela_registro():
         st.markdown("</div>", unsafe_allow_html=True)
 
 def tela_dashboard():
+    aplicar_barra_superior_nativa()
     df = carregar_dados()
     if df.empty: st.info("Sincronizando banco de dados..."); return
 
@@ -289,7 +299,7 @@ def tela_dashboard():
     with col_v: 
         if st.button("⬅ VOLTAR", type="secondary", use_container_width=True): navegar("hub")
     with col_t: 
-        st.markdown("<div class='barra-superior'>PAINEL TÁTICO - MONITORAMENTO DE OCORRÊNCIAS</div>", unsafe_allow_html=True)
+        st.markdown("<div class='barra-superior-texto'>PAINEL DE ATENDIMENTO DO CALL CENTER - DEFESA CIVIL DO ESTADO DO AMAZONAS</div>", unsafe_allow_html=True)
 
     st.markdown("<div class='card-escuro'>", unsafe_allow_html=True)
     c_f1, c_f2, c_f3, c_f4, c_f5 = st.columns(5)
@@ -353,11 +363,12 @@ def tela_dashboard():
         st.markdown("</div>", unsafe_allow_html=True)
 
 def tela_admin():
+    aplicar_barra_superior_nativa()
     col_v, col_t = st.columns([1, 10])
     with col_v: 
         if st.button("⬅ VOLTAR", type="secondary", use_container_width=True): navegar("hub")
     with col_t: 
-        st.markdown("<div class='barra-superior' style='background-color: #8B0000; border-color: #FF0000;'>PAINEL DO ADMINISTRADOR DE SISTEMAS</div>", unsafe_allow_html=True)
+        st.markdown("<div class='barra-superior-texto'><span style='color: #FF4444;'>PAINEL DO ADMINISTRADOR DE SISTEMAS</span></div>", unsafe_allow_html=True)
     
     df = carregar_dados()
     if df.empty: st.info("Banco vazio."); return
@@ -377,7 +388,7 @@ def tela_admin():
 # ==========================================
 # 6. ROTEADOR
 # ==========================================
-aplicar_css_global() # Aplica o CSS Escuro e os fix de cor em TODAS as páginas
+aplicar_css_global() 
 
 if not st.session_state["autenticado"]: tela_login()
 else:
