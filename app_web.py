@@ -1,6 +1,6 @@
 """
 SISTEMA INTEGRADO DE GESTÃO DA DEFESA CIVIL
-Versão 2.1 - Refatoração Institucional Otimizada
+Versão 2.2 - Refatoração Institucional com Base PyQt6
 Autor: Defesa Civil AM / DTI
 """
 
@@ -28,7 +28,7 @@ CORES_RISCO_PINO = {'ALTO': 'orange', 'MÉDIO': 'beige', 'MEDIO': 'beige', 'BAIX
 ASSETS_URL = "https://raw.githubusercontent.com/EBRlock/dashboard-defesa-civil/main/assets/logo_defesa.png"
 
 # =============================================================================
-# INICIALIZAÇÃO DA SESSÃO (Memória do Mapa Adicionada)
+# INICIALIZAÇÃO DA SESSÃO (Memória do Mapa)
 # =============================================================================
 def inicializar_sessao():
     defaults = {
@@ -47,7 +47,7 @@ def inicializar_sessao():
 inicializar_sessao()
 
 # =============================================================================
-# FUNÇÕES DE UTILIDADE
+# FUNÇÕES DE UTILIDADE E BANCO DE DADOS
 # =============================================================================
 def adicionar_emoji_natureza(tipo: str) -> str:
     tipo_upper = str(tipo).upper()
@@ -78,20 +78,19 @@ def carregar_dados() -> pd.DataFrame:
         else:
             df = pd.DataFrame.from_dict(dados, orient='index')
 
-        colunas_padrao = {'tipo': 'Não Informado', 'encaminhamento': 'Não Informado', 'risco': 'MÉDIO', 'data': '', 'bairro': 'Não Informado', 'municipio': 'Manaus', 'endereco': '', 'solicitante': 'Não Informado', 'status': 'Em andamento'}
+        colunas_padrao = {'tipo': 'Não Informado', 'encaminhamento': 'Não Informado', 'risco': 'MÉDIO', 'data': '', 'bairro': 'Não Informado', 'municipio': 'Manaus', 'endereco': '', 'solicitante': 'Não Informado', 'telefone': 'Não Informado', 'status': 'Em andamento'}
         for col, padrao in colunas_padrao.items():
             if col not in df.columns: df[col] = padrao
 
         df['tipo_emoji'] = df['tipo'].apply(adicionar_emoji_natureza)
-        df['encaminhamento'] = df['encaminhamento'].astype(str).str.strip() # Correção do Dashboard
+        df['encaminhamento'] = df['encaminhamento'].astype(str).str.strip()
         df['risco_padrao'] = df['risco'].astype(str).str.strip().str.upper()
         df['data_dt'] = pd.to_datetime(df['data'], errors='coerce', dayfirst=True)
         df['Ano_Filtro'] = df['data_dt'].dt.year.fillna(0).astype(int).astype(str).replace('0', 'Desconhecido')
         df['Mes_Filtro'] = df['data_dt'].dt.strftime('%m').fillna('Desconhecido')
         return df
-
     except Exception as e:
-        st.error(f"Erro ao carregar dados: {e}")
+        st.error(f"Erro ao carregar dados do Firebase: {e}")
         return pd.DataFrame()
 
 def navegar(rota: str):
@@ -99,7 +98,7 @@ def navegar(rota: str):
     st.rerun()
 
 # =============================================================================
-# ESTILOS CSS INSTITUCIONAIS (Intacto)
+# ESTILOS CSS INSTITUCIONAIS (Otimizado)
 # =============================================================================
 def aplicar_css_global():
     st.markdown("""
@@ -137,16 +136,12 @@ def aplicar_css_global():
         </style>
     """, unsafe_allow_html=True)
 
-# =============================================================================
-# COMPONENTES REUTILIZÁVEIS
-# =============================================================================
 def cabecalho_com_voltar(titulo: str, rota_destino: str = "hub", is_dashboard=False):
     col_voltar, col_titulo = st.columns([1, 10])
     with col_voltar:
         if st.button("⬅ VOLTAR", type="secondary", use_container_width=True): navegar(rota_destino)
     with col_titulo:
         if is_dashboard:
-            # Insere o botão de exportar PDF via Javascript (Impressão) no Dashboard
             html_barra = f"""
             <div class='barra-superior'>
                 <span>{titulo}</span>
@@ -168,26 +163,23 @@ def cartao(titulo: str, conteudo):
 # TELAS DO SISTEMA
 # =============================================================================
 def tela_login():
-    with st.container():
-        # Centralização exata com colunas proporcionais
-        _, col_centro, _ = st.columns([1, 1, 1])
-        with col_centro:
-            st.markdown("<div class='card-escuro' style='margin-top: 15vh; text-align: center;'>", unsafe_allow_html=True)
-            st.image(ASSETS_URL, width=130)
-            st.markdown("<h2 style='margin-top: 0.5rem;'>DEFESA CIVIL</h2>", unsafe_allow_html=True)
-            st.markdown("<p style='color: #FF8C00; font-weight: 600;'>SISTEMA INTEGRADO DE GESTÃO</p>", unsafe_allow_html=True)
-            st.write("")
+    _, col_centro, _ = st.columns([1, 1, 1])
+    with col_centro:
+        st.markdown("<div class='card-escuro' style='margin-top: 15vh; text-align: center;'>", unsafe_allow_html=True)
+        st.image(ASSETS_URL, width=130)
+        st.markdown("<h2 style='margin-top: 0.5rem;'>DEFESA CIVIL</h2>", unsafe_allow_html=True)
+        st.markdown("<p style='color: #FF8C00; font-weight: 600;'>SISTEMA INTEGRADO DE GESTÃO</p>", unsafe_allow_html=True)
+        st.write("")
 
-            usuario = st.text_input("Usuário", placeholder="Digite seu usuário", label_visibility="collapsed")
-            senha = st.text_input("Senha", type="password", placeholder="Digite sua senha", label_visibility="collapsed")
+        usuario = st.text_input("Usuário", placeholder="Digite seu usuário", label_visibility="collapsed")
+        senha = st.text_input("Senha", type="password", placeholder="Digite sua senha", label_visibility="collapsed")
 
-            if st.button("AUTENTICAR", type="primary", use_container_width=True):
-                if (usuario in CREDENCIAIS and CREDENCIAIS[usuario] == senha):
-                    st.session_state["autenticado"] = True
-                    navegar("hub")
-                else:
-                    st.error("Acesso negado. Verifique suas credenciais.")
-            st.markdown("</div>", unsafe_allow_html=True)
+        if st.button("AUTENTICAR", type="primary", use_container_width=True):
+            if (usuario in CREDENCIAIS and CREDENCIAIS[usuario] == senha):
+                st.session_state["autenticado"] = True
+                navegar("hub")
+            else: st.error("Acesso negado. Verifique suas credenciais.")
+        st.markdown("</div>", unsafe_allow_html=True)
 
 def tela_hub():
     _, col_centro, _ = st.columns([1, 1, 1])
@@ -201,8 +193,6 @@ def tela_hub():
         if st.button("📝 REGISTRAR OCORRÊNCIA", type="secondary", use_container_width=True): navegar("registro")
         if st.button("📊 PAINEL DE MONITORAMENTO", type="secondary", use_container_width=True): navegar("dashboard")
         
-        # Botão Administrativo removido conforme solicitado
-
         st.write("")
         if st.button("ENCERRAR SESSÃO", type="primary", use_container_width=True):
             st.session_state["autenticado"] = False; navegar("login")
@@ -213,11 +203,10 @@ def tela_registro():
 
     col_form, col_meio, col_mapa = st.columns([1.5, 1, 2.5])
 
-    # MAPA COM PRESERVAÇÃO DE ESTADO
+    # MAPA COM MEMÓRIA
     with col_mapa:
         def _conteudo_mapa():
             st.markdown("<p style='font-weight:600;'>📍 Toque no mapa para capturar a coordenada</p>", unsafe_allow_html=True)
-            
             m_registro = folium.Map(location=st.session_state["map_center"], zoom_start=st.session_state["map_zoom"], tiles="CartoDB positron")
 
             if st.session_state["lat_capturada"] and st.session_state["lon_capturada"]:
@@ -238,15 +227,13 @@ def tela_registro():
             if st.session_state["lat_capturada"]: st.success("✅ GPS capturado com sucesso!")
         cartao("MAPA DE CAPTURA", _conteudo_mapa)
 
-    # FORMULÁRIO (Herança do form_ocorrencia.py)
+    # FORMULÁRIO (Com lógica do antigo EXE inserida)
     with col_form:
         def _conteudo_form():
             c_solic, c_tel = st.columns([2, 1])
-            with c_solic:
-                solicitante = st.text_input("SOLICITANTE", placeholder="Nome completo")
-            with c_tel:
-                telefone = st.text_input("TELEFONE", placeholder="(99) 99999-9999")
-                
+            with c_solic: solicitante = st.text_input("SOLICITANTE", placeholder="Nome completo")
+            with c_tel: telefone = st.text_input("TELEFONE", placeholder="(99) 99999-9999")
+            
             municipio = st.text_input("MUNICÍPIO", value="Manaus")
             bairro = st.text_input("BAIRRO", placeholder="Bairro da ocorrência")
             endereco = st.text_input("LOGRADOURO", value=st.session_state["endereco_capturado"])
@@ -256,7 +243,7 @@ def tela_registro():
                 sem_numero = st.checkbox("Sem número", key="chk_num")
                 numero = st.text_input("NÚMERO", placeholder="Nº", disabled=sem_numero)
             with c_comp:
-                sem_comp = st.checkbox("Sem complemento", key="chk_comp")
+                sem_comp = st.checkbox("Sem compl.", key="chk_comp")
                 complemento = st.text_input("COMPLEMENTO", placeholder="Ex: Apto 101", disabled=sem_comp)
 
             c_nat, c_ris = st.columns(2)
@@ -271,7 +258,6 @@ def tela_registro():
             encaminhamento = st.selectbox("ENCAMINHAMENTO", ["Aguardando Triagem", "Polícia Militar", "Corpo de Bombeiros", "Defesa Civil Municipal"])
 
             if st.button("SALVAR OCORRÊNCIA", type="primary", use_container_width=True):
-                # Validação rigorosa igual ao PyQt6
                 if not bairro or not endereco: st.warning("Preencha o bairro e o logradouro.")
                 elif not st.session_state["lat_capturada"]: st.warning("Toque no mapa para capturar a coordenada GPS!")
                 else:
@@ -279,29 +265,16 @@ def tela_registro():
                     comp_final = "" if sem_comp else f" - {complemento}"
                     end_completo = f"{endereco}, {num_final}{comp_final}".strip(" ,-")
                     
-                    # Dicionário idêntico ao do form_ocorrencia.py
                     novo_registro = {
-                        "tipo": natureza, 
-                        "municipio": municipio, 
-                        "bairro": bairro, 
-                        "endereco": end_completo,
-                        "risco": risco, 
-                        "encaminhamento": encaminhamento, 
-                        "data": data_ocorrencia.strftime("%d/%m/%Y"),
-                        "solicitante": solicitante, 
-                        "telefone": telefone, # O campo que trouxemos de volta!
-                        "status": status_op, 
-                        "latitude": st.session_state["lat_capturada"], 
-                        "longitude": st.session_state["lon_capturada"]
+                        "tipo": natureza, "municipio": municipio, "bairro": bairro, "endereco": end_completo,
+                        "risco": risco, "encaminhamento": encaminhamento, "data": data_ocorrencia.strftime("%d/%m/%Y"),
+                        "solicitante": solicitante, "telefone": telefone, "status": status_op, 
+                        "latitude": st.session_state["lat_capturada"], "longitude": st.session_state["lon_capturada"]
                     }
                     try:
                         obter_referencia("ocorrencias").push(novo_registro)
-                        st.success("Ocorrência salva com sucesso no banco Firebase!"); st.balloons()
-                        carregar_dados.clear()
-                        # Limpa os campos visuais igual ao `self.clear()` do Desktop
-                        st.session_state["endereco_capturado"] = ""
-                        st.session_state["lat_capturada"] = None
-                        st.session_state["lon_capturada"] = None
+                        st.success("Ocorrência salva com sucesso!"); st.balloons(); carregar_dados.clear()
+                        st.session_state["endereco_capturado"] = ""; st.session_state["lat_capturada"] = None; st.session_state["lon_capturada"] = None
                         st.rerun()
                     except Exception as e: st.error(f"Erro ao salvar: {e}")
         cartao("DADOS CADASTRAIS", _conteudo_form)
@@ -322,14 +295,20 @@ def tela_registro():
             c_and.metric("EM ANDAMENTO", qtd_andamento)
             c_fin.metric("FINALIZADOS", qtd_finalizados)
             st.markdown("---")
-            st.markdown("<div style='font-size:0.8rem; background:#1E1E3F; padding:0.5rem; border-radius:6px;'><b>TIPO</b> &nbsp;&nbsp; <b>RISCO</b> &nbsp;&nbsp; <b>STATUS</b> &nbsp;&nbsp; <b>AÇÃO</b></div>", unsafe_allow_html=True)
+            st.markdown("<div style='font-size:0.8rem; background:#1E1E3F; padding:0.5rem; border-radius:6px;'><b>TIPO</b> &nbsp;&nbsp; <b>RISCO</b> &nbsp;&nbsp; <b>STATUS</b></div>", unsafe_allow_html=True)
+            
+            # Exibe uma mini-lista das ocorrências de hoje para o despachante visualizar rápido
+            if not df.empty and 'status' in df.columns:
+                for _, row in df_hoje.tail(3).iterrows():
+                    cor_status = "green" if row['status'] == 'Finalizado' else "orange"
+                    st.markdown(f"<div style='font-size: 11px; padding: 4px; border-bottom: 1px solid #333;'>{row.get('tipo_emoji', 'N/A')} | {row.get('risco', 'N/A')} | <span style='color:{cor_status}'>{row['status']}</span></div>", unsafe_allow_html=True)
+                
         cartao("MONITORAMENTO DO TURNO", _conteudo_monitoramento)
 
 def tela_dashboard():
     df = carregar_dados()
     if df.empty: st.info("Sincronizando base de dados..."); return
 
-    # Flag True para adicionar o botão de PDF nativo na barra superior
     cabecalho_com_voltar("PAINEL TÁTICO - MONITORAMENTO DE OCORRÊNCIAS", is_dashboard=True)
 
     with st.container():
@@ -355,7 +334,6 @@ def tela_dashboard():
         def _graf_natureza(): st.dataframe(df_filtrado['tipo_emoji'].value_counts().reset_index(), hide_index=True, use_container_width=True, height=200)
         cartao("NATUREZA", _graf_natureza)
 
-        # Encaminhamento Corrigido
         def _graf_encaminhamento(): st.dataframe(df_filtrado['encaminhamento'].value_counts().reset_index(), hide_index=True, use_container_width=True, height=200)
         cartao("ENCAMINHAMENTO", _graf_encaminhamento)
 
@@ -409,4 +387,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
