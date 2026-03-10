@@ -108,55 +108,89 @@ def carregar_dados():
 # ==========================================
 # 4. TELA: LOGIN
 # ==========================================
+# ==========================================
+# 4. TELA: LOGIN (Card Institucional Blindado)
+# ==========================================
 def tela_login():
-    st.markdown('<div class="login-wrapper">', unsafe_allow_html=True)
+    st.markdown("""
+        <style>
+        /* Fundo geral da página */
+        .stApp { background-color: #F4F7F9 !important; }
+        
+        /* O GRANDE TRUQUE: Transforma a coluna do meio no cartão branco perfeito */
+        [data-testid="column"]:nth-of-type(2) {
+            background-color: #FFFFFF !important;
+            border-radius: 16px !important;
+            padding: 40px !important;
+            box-shadow: 0 10px 30px rgba(15, 32, 64, 0.1) !important;
+            border: 1px solid #E2E8F0 !important;
+            margin-top: 10vh !important;
+        }
+
+        /* Estiliza os textos dentro do cartão */
+        [data-testid="column"]:nth-of-type(2) label { 
+            color: #0F2040 !important; 
+            font-weight: 700 !important; 
+        }
+
+        /* Força os campos de texto a ficarem brancos (Ignora o Dark Mode do navegador) */
+        .stTextInput input {
+            background-color: #F8FAFC !important;
+            color: #0F2040 !important;
+            border: 1px solid #CBD5E1 !important;
+            border-radius: 6px !important;
+        }
+        .stTextInput input:focus {
+            border-color: #0F2040 !important;
+            box-shadow: 0 0 0 1px #0F2040 !important;
+        }
+
+        /* Força o Botão a ser Azul Institucional (Remove o vermelho padrão) */
+        [data-testid="column"]:nth-of-type(2) div.stButton > button {
+            background-color: #0F2040 !important;
+            color: #FFFFFF !important;
+            border-radius: 8px !important;
+            height: 48px !important;
+            border: none !important;
+            width: 100% !important;
+            font-weight: bold !important;
+            margin-top: 15px !important;
+            transition: 0.3s;
+        }
+        [data-testid="column"]:nth-of-type(2) div.stButton > button:hover {
+            background-color: #1a365d !important;
+            box-shadow: 0 4px 12px rgba(15, 32, 64, 0.3) !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Cria as colunas e foca na do meio
     _, col_centro, _ = st.columns([1, 1.2, 1])
     
     with col_centro:
-        st.markdown('<div class="login-card">', unsafe_allow_html=True)
-        st.image("https://raw.githubusercontent.com/EBRlock/dashboard-defesa-civil/main/assets/logo_defesa.png", width=140)
-        st.markdown("<div class='login-title'>DEFESA CIVIL DO AMAZONAS</div>", unsafe_allow_html=True)
-        st.markdown("<div class='login-subtitle'>Sistema Integrado de Gestão e Monitoramento</div>", unsafe_allow_html=True)
+        # Textos e Imagens alinhados no centro de forma segura
+        st.markdown(
+            '''
+            <div style="text-align: center; margin-bottom: 25px;">
+                <img src="https://raw.githubusercontent.com/EBRlock/dashboard-defesa-civil/main/assets/logo_defesa.png" width="130">
+                <h2 style="color: #0F2040; font-weight: 800; font-size: 20px; margin-top: 15px; margin-bottom: 5px; letter-spacing: 0.5px;">DEFESA CIVIL DO AMAZONAS</h2>
+                <p style="color: #64748B; font-size: 13px; margin-bottom: 0;">Sistema Integrado de Gestão e Monitoramento</p>
+            </div>
+            ''', 
+            unsafe_allow_html=True
+        )
         
+        # Campos nativos do Streamlit
         usuario = st.text_input("Credencial de Acesso", placeholder="Digite seu usuário")
         senha = st.text_input("Palavra-passe", type="password", placeholder="Digite sua senha")
         
-        st.write("")
-        if st.button("AUTENTICAR", use_container_width=True, type="primary"):
+        # Lógica do Botão
+        if st.button("AUTENTICAR"):
             if (usuario == "gestaodefesacivil" and senha == "defesacivilam26") or (usuario == "admin" and senha == "1234"):
                 st.session_state["autenticado"] = True
                 navegar("hub")
             else:
                 st.error("Acesso negado. Credenciais incorretas.")
-        st.markdown('</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# ==========================================
-# 5. TELA: HUB CENTRAL
-# ==========================================
-def tela_hub():
-    st.markdown("<div class='institucional-header'>🎛️ PORTAL DE OPERAÇÕES - ESCOLHA O MÓDULO</div>", unsafe_allow_html=True)
-    
-    st.markdown("<div class='institucional-card'>", unsafe_allow_html=True)
-    st.write("Seja bem-vindo ao Sistema Integrado. Selecione abaixo a ferramenta desejada para iniciar sua sessão de trabalho.")
-    st.write("")
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.info("📊 **MÓDULO DE INTELIGÊNCIA**\n\nMonitoramento em tempo real, mapas de calor e estatísticas operacionais.")
-        if st.button("Abrir Painel Tático", use_container_width=True): navegar("dashboard")
-            
-    with col2:
-        st.success("📝 **MÓDULO DE REGISTRO**\n\nLançamento de novas ocorrências com captura de geolocalização via satélite.")
-        if st.button("Registrar Ocorrência", use_container_width=True): navegar("registro")
-            
-    with col3:
-        st.error("⚙️ **MÓDULO DE ADMINISTRAÇÃO**\n\nGestão do banco de dados bruto, exportação de relatórios (CSV) e exclusões.")
-        if st.button("Acessar Admin", use_container_width=True): navegar("admin")
-        
-    st.markdown("</div>", unsafe_allow_html=True)
-
 # ==========================================
 # 6. MENU LATERAL (SIDEBAR)
 # ==========================================
@@ -354,3 +388,4 @@ else:
     elif st.session_state["rota"] == "dashboard": tela_dashboard()
     elif st.session_state["rota"] == "registro": tela_registro()
     elif st.session_state["rota"] == "admin": tela_admin()
+
