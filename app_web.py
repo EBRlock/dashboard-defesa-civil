@@ -218,18 +218,15 @@ def tela_registro():
         def _conteudo_mapa():
             st.markdown("<p style='font-weight:600;'>📍 Toque no mapa para capturar a coordenada</p>", unsafe_allow_html=True)
             
-            # Carrega o mapa nas coordenadas memorizadas na sessão (Evita o resize/reset do zoom)
             m_registro = folium.Map(location=st.session_state["map_center"], zoom_start=st.session_state["map_zoom"], tiles="CartoDB positron")
 
             if st.session_state["lat_capturada"] and st.session_state["lon_capturada"]:
                 folium.Marker([st.session_state["lat_capturada"], st.session_state["lon_capturada"]], icon=folium.Icon(color="red", icon="map-marker")).add_to(m_registro)
 
-            mapa_clicado = st_folium(m_registro, height=520, use_container_width=True, key="mapa_novo")
+            mapa_clicado = st_folium(m_registro, height=560, use_container_width=True, key="mapa_novo")
 
             if mapa_clicado and mapa_clicado.get("last_clicked"):
                 lat, lon = mapa_clicado["last_clicked"]["lat"], mapa_clicado["last_clicked"]["lng"]
-                
-                # Salva o estado atual do mapa para ele não se mover
                 st.session_state["map_center"] = [mapa_clicado["center"]["lat"], mapa_clicado["center"]["lng"]]
                 st.session_state["map_zoom"] = mapa_clicado["zoom"]
                 
@@ -241,15 +238,19 @@ def tela_registro():
             if st.session_state["lat_capturada"]: st.success("✅ GPS capturado com sucesso!")
         cartao("MAPA DE CAPTURA", _conteudo_mapa)
 
-    # FORMULÁRIO COM CHECKBOXES E STATUS
+    # FORMULÁRIO (Herança do form_ocorrencia.py)
     with col_form:
         def _conteudo_form():
-            solicitante = st.text_input("SOLICITANTE", placeholder="Nome completo")
+            c_solic, c_tel = st.columns([2, 1])
+            with c_solic:
+                solicitante = st.text_input("SOLICITANTE", placeholder="Nome completo")
+            with c_tel:
+                telefone = st.text_input("TELEFONE", placeholder="(99) 99999-9999")
+                
             municipio = st.text_input("MUNICÍPIO", value="Manaus")
             bairro = st.text_input("BAIRRO", placeholder="Bairro da ocorrência")
             endereco = st.text_input("LOGRADOURO", value=st.session_state["endereco_capturado"])
 
-            # Checkboxes integrados de Número e Complemento
             c_num, c_comp = st.columns([1, 2])
             with c_num:
                 sem_numero = st.checkbox("Sem número", key="chk_num")
@@ -266,11 +267,11 @@ def tela_registro():
             data_ocorrencia = c_data.date_input("DATA", datetime.now())
             hora_ocorrencia = c_hora.time_input("HORA", datetime.now().time())
 
-            # Status Adicionado para o Painel Funcionar
             status_op = st.selectbox("STATUS DA OCORRÊNCIA", ["Em andamento", "Finalizado"])
             encaminhamento = st.selectbox("ENCAMINHAMENTO", ["Aguardando Triagem", "Polícia Militar", "Corpo de Bombeiros", "Defesa Civil Municipal"])
 
             if st.button("SALVAR OCORRÊNCIA", type="primary", use_container_width=True):
+                # Validação rigorosa igual ao PyQt6
                 if not bairro or not endereco: st.warning("Preencha o bairro e o logradouro.")
                 elif not st.session_state["lat_capturada"]: st.warning("Toque no mapa para capturar a coordenada GPS!")
                 else:
@@ -278,16 +279,29 @@ def tela_registro():
                     comp_final = "" if sem_comp else f" - {complemento}"
                     end_completo = f"{endereco}, {num_final}{comp_final}".strip(" ,-")
                     
+                    # Dicionário idêntico ao do form_ocorrencia.py
                     novo_registro = {
-                        "tipo": natureza, "municipio": municipio, "bairro": bairro, "endereco": end_completo,
-                        "risco": risco, "encaminhamento": encaminhamento, "data": data_ocorrencia.strftime("%d/%m/%Y"),
-                        "solicitante": solicitante, "status": status_op, 
-                        "latitude": st.session_state["lat_capturada"], "longitude": st.session_state["lon_capturada"]
+                        "tipo": natureza, 
+                        "municipio": municipio, 
+                        "bairro": bairro, 
+                        "endereco": end_completo,
+                        "risco": risco, 
+                        "encaminhamento": encaminhamento, 
+                        "data": data_ocorrencia.strftime("%d/%m/%Y"),
+                        "solicitante": solicitante, 
+                        "telefone": telefone, # O campo que trouxemos de volta!
+                        "status": status_op, 
+                        "latitude": st.session_state["lat_capturada"], 
+                        "longitude": st.session_state["lon_capturada"]
                     }
                     try:
                         obter_referencia("ocorrencias").push(novo_registro)
-                        st.success("Ocorrência salva com sucesso!"); st.balloons(); carregar_dados.clear()
-                        st.session_state["endereco_capturado"] = ""; st.session_state["lat_capturada"] = None; st.session_state["lon_capturada"] = None
+                        st.success("Ocorrência salva com sucesso no banco Firebase!"); st.balloons()
+                        carregar_dados.clear()
+                        # Limpa os campos visuais igual ao `self.clear()` do Desktop
+                        st.session_state["endereco_capturado"] = ""
+                        st.session_state["lat_capturada"] = None
+                        st.session_state["lon_capturada"] = None
                         st.rerun()
                     except Exception as e: st.error(f"Erro ao salvar: {e}")
         cartao("DADOS CADASTRAIS", _conteudo_form)
@@ -298,7 +312,6 @@ def tela_registro():
             df = carregar_dados()
             hoje = datetime.now().strftime("%d/%m/%Y")
             
-            # Filtra apenas ocorrências de hoje e conta os status
             qtd_andamento, qtd_finalizados = 0, 0
             if not df.empty and 'status' in df.columns:
                 df_hoje = df[df['data'] == hoje]
@@ -396,3 +409,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
