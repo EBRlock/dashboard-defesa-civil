@@ -47,14 +47,13 @@ def buscar_endereco_por_coordenada(lat, lon):
         return response.get('display_name', 'Endereço não encontrado no satélite')
     except: return ""
 
-@st.cache_data(ttl=15) # Atualiza mais rápido (15 segundos)
+@st.cache_data(ttl=15)
 def carregar_dados():
     try:
         ref = obter_referencia("ocorrencias")
         dados = ref.get()
         if not dados: return pd.DataFrame()
         
-        # TRADUTOR BLINDADO: Resolve o bug do Dashboard vazio
         if isinstance(dados, list):
             dados_dict = {str(i): v for i, v in enumerate(dados) if v is not None}
             df = pd.DataFrame.from_dict(dados_dict, orient='index')
@@ -76,7 +75,7 @@ def carregar_dados():
         return pd.DataFrame()
 
 # ==========================================
-# 4. CSS GLOBAL UNIFICADO (100% TEMA ESCURO)
+# 4. CSS GLOBAL UNIFICADO (BRANCO E AZUL MARINHO)
 # ==========================================
 def aplicar_css_global():
     st.markdown("""
@@ -87,40 +86,57 @@ def aplicar_css_global():
         .stApp { background-color: #19194D !important; }
         .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; max-width: 98% !important; }
         
-        /* Textos, Fontes Maiores e Brancas */
+        /* Todos os Textos em Branco (Removido o Laranja) */
         h1, h2, h3, h4, p, label, .stMarkdown { color: #FFFFFF !important; font-family: 'Segoe UI', Arial, sans-serif !important; font-size: 16px !important; }
-        .texto-laranja { color: #FF8C00 !important; font-weight: bold; font-size: 16px !important; letter-spacing: 1px;}
+        .texto-destaque { color: #FFFFFF !important; font-weight: bold; font-size: 16px !important; letter-spacing: 1px;}
         
-        /* Barra Superior (Top Bar) */
+        /* Barra Superior */
         .barra-superior {
             background-color: #0B0B2A; color: #FFFFFF; padding: 15px 20px; border-radius: 6px;
             font-weight: 800; font-size: 20px; text-transform: uppercase;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3); margin-bottom: 20px; border: 1px solid #4A4A8C;
         }
 
-        /* Cartões Translucidos (Containers) */
+        /* Cartões Translucidos */
         .card-escuro {
             background-color: rgba(255, 255, 255, 0.05) !important; border-radius: 8px; padding: 25px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1);
             height: 100%;
         }
         
+        /* Títulos dos cartões agora são BRANCOS */
         .titulo-cartao { 
-            font-size: 15px; font-weight: 800; color: #FF8C00; 
+            font-size: 15px; font-weight: 800; color: #FFFFFF !important; 
             text-transform: uppercase; margin-bottom: 15px; 
             border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 8px; 
         }
 
-        /* Inputs e Formulários Escuros */
+        /* ========================================================
+           CORREÇÃO DOS INPUTS INVISÍVEIS (Selectbox, Date, Time)
+           ======================================================== */
         .stTextInput label p, .stSelectbox label p, .stDateInput label p, .stTimeInput label p { font-weight: 700 !important; color: #FFFFFF !important; }
-        input, select, div[data-baseweb="select"] > div, .stDateInput > div > div > input, .stTimeInput > div > div > input {
-            background-color: #23235B !important; color: #FFFFFF !important; 
-            border: 1px solid #4A4A8C !important; border-radius: 6px !important; padding: 10px !important; font-size: 16px !important;
+        
+        /* Fundo escuro e borda fina para as caixas */
+        input, div[data-baseweb="select"] > div {
+            background-color: #23235B !important; 
+            border: 1px solid #4A4A8C !important; border-radius: 6px !important;
         }
-        ul[data-baseweb="menu"] { background-color: #23235B !important; color: #FFFFFF !important; border: 1px solid #4A4A8C !important; }
-        li[role="option"] { color: #FFFFFF !important; font-size: 15px !important; }
+        
+        /* O SEGREDO: Força qualquer texto selecionado a ficar BRANCO */
+        input, div[data-baseweb="select"] * {
+            color: #FFFFFF !important; font-size: 16px !important;
+        }
 
-        /* Compressão de Espaços (Menos Gaps) */
+        /* Ajuste do Calendário para não sumir os dias */
+        div[data-baseweb="calendar"] * { color: #000000 !important; }
+        div[data-baseweb="calendar"] { background-color: #FFFFFF !important; }
+
+        /* Dropdown (Lista suspensa) */
+        ul[data-baseweb="menu"] { background-color: #23235B !important; border: 1px solid #4A4A8C !important; }
+        li[role="option"] { color: #FFFFFF !important; font-size: 15px !important; }
+        li[role="option"]:hover { background-color: #4A4A8C !important; }
+
+        /* Compressão de Espaços */
         [data-testid="stVerticalBlock"] { gap: 0.6rem !important; }
 
         /* Botões */
@@ -128,8 +144,9 @@ def aplicar_css_global():
             background-color: #23235B !important; color: #FFFFFF !important; 
             border: 1px solid #4A4A8C !important; font-weight: bold !important; height: 50px !important; font-size: 16px !important;
         }
-        div.stButton > button[kind="secondary"]:hover { background-color: #2D2D70 !important; border-color: #FF8C00 !important; }
+        div.stButton > button[kind="secondary"]:hover { background-color: #2D2D70 !important; border-color: #FFFFFF !important; }
         
+        /* Botão Primário Laranja (Único elemento laranja da tela) */
         div.stButton > button[kind="primary"] { 
             background-color: #FF8C00 !important; color: #FFFFFF !important; 
             border: none !important; font-weight: bold !important; height: 50px !important; margin-top: 15px !important; font-size: 18px !important;
@@ -137,12 +154,12 @@ def aplicar_css_global():
         div.stButton > button[kind="primary"]:hover { background-color: #E67E00 !important; }
         div.stButton > button[kind="primary"] p { color: #FFFFFF !important; font-size: 18px !important; font-weight: bold !important; }
         
-        /* Métricas */
+        /* Métricas Gigantes agora em Branco */
         div[data-testid="metric-container"] { background-color: rgba(255,255,255,0.05) !important; padding: 15px !important; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center; }
-        div[data-testid="stMetricValue"] > div { color: #FF8C00 !important; font-size: 45px !important; font-weight: 900 !important; }
+        div[data-testid="stMetricValue"] > div { color: #FFFFFF !important; font-size: 45px !important; font-weight: 900 !important; }
         div[data-testid="stMetricLabel"] > div p { color: #FFFFFF !important; font-size: 14px !important; font-weight: 600 !important; text-transform: uppercase; }
         
-        /* Tabelas (Dataframes) Escuras */
+        /* Tabelas */
         [data-testid="stDataFrame"] { background-color: #23235B !important; border-radius: 6px; }
         </style>
     """, unsafe_allow_html=True)
@@ -157,7 +174,7 @@ def tela_login():
         st.markdown('<div class="card-escuro" style="margin-top: 10vh; text-align: center;">', unsafe_allow_html=True)
         st.image("https://raw.githubusercontent.com/EBRlock/dashboard-defesa-civil/main/assets/logo_defesa.png", width=140)
         st.markdown("<h2 style='margin-top: 15px;'>DEFESA CIVIL</h2>", unsafe_allow_html=True)
-        st.markdown("<p class='texto-laranja'>SISTEMA INTEGRADO DE GESTÃO</p>", unsafe_allow_html=True)
+        st.markdown("<p class='texto-destaque'>SISTEMA INTEGRADO DE GESTÃO</p>", unsafe_allow_html=True)
         st.write("")
         
         usuario = st.text_input("Usuário", placeholder="Credencial", label_visibility="collapsed")
@@ -175,7 +192,7 @@ def tela_hub():
         st.markdown('<div class="card-escuro" style="margin-top: 10vh; text-align: center;">', unsafe_allow_html=True)
         st.image("https://raw.githubusercontent.com/EBRlock/dashboard-defesa-civil/main/assets/logo_defesa.png", width=140)
         st.markdown("<h2 style='margin-top: 15px;'>DEFESA CIVIL</h2>", unsafe_allow_html=True)
-        st.markdown("<p class='texto-laranja'>BEM-VINDO AO PORTAL OPERACIONAL</p>", unsafe_allow_html=True)
+        st.markdown("<p class='texto-destaque'>BEM-VINDO AO PORTAL OPERACIONAL</p>", unsafe_allow_html=True)
         st.write("---")
         
         if st.button("📝 REGISTRAR OCORRÊNCIA", type="secondary", use_container_width=True): navegar("registro")
@@ -196,10 +213,9 @@ def tela_registro():
 
     col_form, col_meio, col_mapa = st.columns([1.3, 1, 2.5])
     
-    # === ÁREA 1: O MAPA INTERATIVO (Processado primeiro para gerar o endereço) ===
     with col_mapa:
         st.markdown("<div class='card-escuro'>", unsafe_allow_html=True)
-        st.markdown("<p class='texto-laranja'>📍 TOQUE NO MAPA PARA CAPTURAR A COORDENADA</p>", unsafe_allow_html=True)
+        st.markdown("<p class='texto-destaque'>📍 TOQUE NO MAPA PARA CAPTURAR A COORDENADA</p>", unsafe_allow_html=True)
         m_registro = folium.Map(location=[-3.119, -60.021], zoom_start=12, tiles="CartoDB dark_matter")
         mapa_clicado = st_folium(m_registro, height=500, use_container_width=True, key="mapa_novo")
         
@@ -210,13 +226,12 @@ def tela_registro():
                 st.session_state["lat_capturada"] = lat
                 st.session_state["lon_capturada"] = lon
                 st.session_state["endereco_capturado"] = buscar_endereco_por_coordenada(lat, lon)
-                st.rerun() # Atualiza a tela preenchendo o formulário na hora!
+                st.rerun() 
                 
         if st.session_state["lat_capturada"]:
             st.success("✅ GPS Capturado com sucesso!")
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # === ÁREA 2: FORMULÁRIO (Sem st.form, para ser atualizado ao vivo) ===
     with col_form:
         st.markdown("<div class='card-escuro'>", unsafe_allow_html=True)
         st.markdown("<div class='titulo-cartao'>Dados Cadastrais</div>", unsafe_allow_html=True)
@@ -225,7 +240,6 @@ def tela_registro():
         municipio = st.text_input("MUNICÍPIO", value="Manaus")
         bairro = st.text_input("BAIRRO", placeholder="Bairro da ocorrência")
         
-        # Recebe o endereço do clique no mapa automaticamente
         endereco = st.text_input("LOGRADOURO (RUA / AV)", value=st.session_state["endereco_capturado"])
         
         c_num, c_comp = st.columns([1, 2])
@@ -234,6 +248,10 @@ def tela_registro():
         
         natureza = st.selectbox("NATUREZA DA OCORRÊNCIA", ["Alagamento", "Incêndio", "Deslizamento", "Desabamento", "Outros"])
         risco = st.selectbox("GRAU DE RISCO", ["BAIXO", "MÉDIO", "ALTO", "CRÍTICO"])
+        
+        c_data, c_hora = st.columns(2)
+        data_ocorrencia = c_data.date_input("DATA DO REGISTRO")
+        hora_ocorrencia = c_hora.time_input("HORA")
         
         encaminhamento = st.selectbox("ÓRGÃO DE ENCAMINHAMENTO", ["Aguardando Triagem", "Polícia Militar", "Corpo de Bombeiros", "Defesa Civil Municipal"])
         
@@ -253,7 +271,6 @@ def tela_registro():
                 except Exception as e: st.error(f"Erro: {e}")
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # === ÁREA 3: CONTADORES DO TURNO ===
     with col_meio:
         st.markdown("<div class='card-escuro'>", unsafe_allow_html=True)
         st.markdown("<div class='titulo-cartao'>Monitoramento do Turno</div>", unsafe_allow_html=True)
@@ -330,7 +347,7 @@ def tela_dashboard():
         df_g = df_f[df_f['Mes_Filtro'] != 'Desconhecido']
         if not df_g.empty:
             fig_bar = px.bar(df_g['Mes_Filtro'].value_counts().reset_index().sort_values(by='Mes_Filtro'), x='Mes_Filtro', y='count')
-            fig_bar.update_traces(marker_color='#FF8C00') 
+            fig_bar.update_traces(marker_color='#FFFFFF') 
             fig_bar.update_layout(height=140, margin=dict(t=0, b=0, l=0, r=0), xaxis_title=None, yaxis_title=None, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font=dict(color='white'))
             st.plotly_chart(fig_bar, use_container_width=True, theme=None)
         st.markdown("</div>", unsafe_allow_html=True)
@@ -360,7 +377,7 @@ def tela_admin():
 # ==========================================
 # 6. ROTEADOR
 # ==========================================
-aplicar_css_global() # Aplica o CSS Escuro em TODAS as páginas
+aplicar_css_global() # Aplica o CSS Escuro e os fix de cor em TODAS as páginas
 
 if not st.session_state["autenticado"]: tela_login()
 else:
