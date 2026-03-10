@@ -7,35 +7,9 @@ from datetime import datetime
 from core.database import obter_referencia
 
 # ==========================================
-# CONFIGURAÇÃO GERAL E CSS
+# CONFIGURAÇÃO GERAL
 # ==========================================
 st.set_page_config(page_title="Gestão Defesa Civil", layout="wide", initial_sidebar_state="collapsed")
-
-st.markdown("""
-    <style>
-    header {visibility: hidden;}
-    footer {visibility: hidden;}
-    .stApp { background-color: #F4F6F9; }
-    
-    /* Login Limpo e Centralizado */
-    .login-container {
-        max-width: 400px;
-        margin: 10vh auto;
-        padding: 40px;
-        background-color: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        text-align: center;
-    }
-    
-    .cabecalho {
-        background-color: #191970; color: white; padding: 12px 20px; 
-        border-radius: 4px; margin-bottom: 15px; font-weight: bold;
-        font-family: 'Segoe UI', Arial, sans-serif; font-size: 18px;
-        text-transform: uppercase;
-    }
-    </style>
-""", unsafe_allow_html=True)
 
 # ==========================================
 # VARIÁVEIS DE SESSÃO (ROTEAMENTO)
@@ -79,23 +53,104 @@ def carregar_dados():
     except: return pd.DataFrame()
 
 # ==========================================
-# TELA 1: LOGIN
+# TELA 1: LOGIN (Design do App .EXE)
 # ==========================================
 def tela_login():
-    st.markdown('<div class="login-container">', unsafe_allow_html=True)
-    st.image("https://raw.githubusercontent.com/EBRlock/dashboard-defesa-civil/main/assets/logo_defesa.png", use_container_width=True)
-    st.markdown("<h3 style='color: #191970; margin-top: 15px;'>🔐 Acesso Restrito</h3>", unsafe_allow_html=True)
+    st.markdown("""
+        <style>
+        header {visibility: hidden;}
+        footer {visibility: hidden;}
+        #MainMenu {visibility: hidden;}
+        
+        /* Fundo Azul Escuro Oficial */
+        .stApp { background-color: #191970 !important; }
+        
+        /* Efeito Glassmorphism (Vidro Translúcido) */
+        .login-box {
+            background: rgba(255, 255, 255, 0.08) !important;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 50px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            max-width: 400px;
+            margin: auto;
+            margin-top: 10vh;
+            text-align: center;
+        }
+        
+        /* Força textos para branco dando contraste */
+        .login-box h3, .login-box label, .login-box p {
+            color: #FFFFFF !important;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-weight: bold;
+        }
+
+        /* Campos de input translúcidos */
+        div.stTextInput > div > div > input {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            color: white !important;
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            border-radius: 8px;
+        }
+        
+        /* Botão Entrar */
+        div.stButton > button {
+            background-color: rgba(255, 255, 255, 0.2) !important;
+            color: white !important;
+            border: 1px solid rgba(255, 255, 255, 0.4) !important;
+            border-radius: 8px;
+            width: 100%;
+            height: 3em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        div.stButton > button:hover {
+            background-color: rgba(255, 255, 255, 0.4) !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    _, col_central, _ = st.columns([1, 2, 1])
     
-    usuario = st.text_input("Usuário")
-    senha = st.text_input("Senha", type="password")
-    
-    if st.button("Entrar", use_container_width=True, type="primary"):
-        if usuario == "gestaodefesacivil" and senha == "defesacivilam26":
-            st.session_state["autenticado"] = True
-            navegar("dashboard")
-        else:
-            st.error("Credenciais inválidas.")
-    st.markdown('</div>', unsafe_allow_html=True)
+    with col_central:
+        st.markdown('<div class="login-box">', unsafe_allow_html=True)
+        st.image("https://raw.githubusercontent.com/EBRlock/dashboard-defesa-civil/main/assets/logo_defesa.png", use_container_width=True)
+        st.markdown("<h3 style='margin-top: 10px; margin-bottom: 20px; letter-spacing: 2px;'>DEFESA CIVIL</h3>", unsafe_allow_html=True)
+        
+        usuario = st.text_input("USUÁRIO")
+        senha = st.text_input("SENHA", type="password")
+        
+        st.write("")
+        if st.button("ENTRAR"):
+            # Permite o acesso oficial ou o atalho de desenvolvedor
+            if (usuario == "gestaodefesacivil" and senha == "defesacivilam26") or (usuario == "admin" and senha == "1234"):
+                st.session_state["autenticado"] = True
+                navegar("dashboard")
+            else:
+                st.error("Credenciais inválidas.")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+# ==========================================
+# CSS DO HUB E DASHBOARD (Tema Claro)
+# ==========================================
+def aplicar_css_app():
+    st.markdown("""
+        <style>
+        header {visibility: hidden;}
+        footer {visibility: hidden;}
+        /* Retorna o fundo claro assim que logar */
+        .stApp { background-color: #F4F6F9 !important; }
+        
+        .cabecalho {
+            background-color: #191970; color: white; padding: 12px 20px; 
+            border-radius: 4px; margin-bottom: 15px; font-weight: bold;
+            font-family: 'Segoe UI', Arial, sans-serif; font-size: 18px;
+            text-transform: uppercase;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
 # ==========================================
 # MENU LATERAL (HUB)
@@ -138,7 +193,6 @@ def tela_registro():
         st.markdown("### 📍 Localização Exata (Toque no mapa para marcar a rua)")
         st.info("A coordenada será salva automaticamente ao tocar no mapa.")
         
-        # Mapa para captura de clique
         m_registro = folium.Map(location=[-3.119, -60.021], zoom_start=12, tiles="CartoDB positron")
         mapa_clicado = st_folium(m_registro, height=350, use_container_width=True, key="mapa_novo")
         
@@ -153,7 +207,6 @@ def tela_registro():
                 lat = mapa_clicado["last_clicked"]["lat"]
                 lon = mapa_clicado["last_clicked"]["lng"]
                 
-                # Monta os dados para o Firebase
                 novo_registro = {
                     "tipo": natureza,
                     "municipio": municipio,
@@ -171,13 +224,12 @@ def tela_registro():
                     ref.push(novo_registro)
                     st.success("✅ Ocorrência registrada com sucesso na nuvem!")
                     st.balloons()
-                    # Limpa os dados de cache para o Dashboard atualizar imediatamente
                     carregar_dados.clear()
                 except Exception as e:
                     st.error(f"Erro ao salvar: {e}")
 
 # ==========================================
-# TELA 3: DASHBOARD (SEU CÓDIGO ANTIGO COMPACTADO)
+# TELA 3: DASHBOARD
 # ==========================================
 def tela_dashboard():
     df = carregar_dados()
@@ -247,10 +299,9 @@ def tela_dashboard():
 if not st.session_state["autenticado"]:
     tela_login()
 else:
-    # Mostra a barra lateral se estiver logado
+    aplicar_css_app() # Blinda o layout claro das páginas internas
     renderizar_sidebar()
     
-    # Chama a tela correta baseada no menu clicado
     if st.session_state["rota"] == "dashboard":
         tela_dashboard()
     elif st.session_state["rota"] == "registro":
