@@ -65,81 +65,91 @@ def aplicar_css_desktop():
     st.markdown("""
         <style>
         #MainMenu {visibility: hidden;} header {visibility: hidden;} footer {visibility: hidden;}
-        /* Fundo da Janela EXE */
         .stApp { background-color: #19194D !important; }
         
-        /* O Cartão Central de Vidro */
         [data-testid="column"]:nth-of-type(2) {
             background-color: rgba(255, 255, 255, 0.08) !important;
-            border-radius: 12px !important;
-            padding: 40px !important;
+            border-radius: 12px !important; padding: 40px !important;
             border: 1px solid rgba(255, 255, 255, 0.2) !important;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
-            margin-top: 8vh !important;
-            text-align: center;
+            margin-top: 8vh !important; text-align: center;
         }
 
-        /* Textos Brancos e Laranjas */
         h1, h2, h3, p, label { color: #FFFFFF !important; font-family: 'Segoe UI', Arial, sans-serif !important; }
         .texto-laranja { color: #FF8C00 !important; font-weight: bold; font-size: 14px; letter-spacing: 1px;}
         
-        /* Inputs Escuros com borda fina */
         .stTextInput input {
             background-color: #23235B !important; color: white !important;
             border: 1px solid #4A4A8C !important; border-radius: 4px !important;
         }
         
-        /* Botão Primário (Laranja) */
-        button[kind="primary"] {
+        div.stButton > button[kind="primary"] {
             background-color: #FF8C00 !important; color: white !important;
             border: none !important; border-radius: 6px !important; font-weight: bold !important;
             height: 45px !important; margin-top: 10px !important;
         }
-        button[kind="primary"]:hover { background-color: #E67E00 !important; }
+        div.stButton > button[kind="primary"]:hover { background-color: #E67E00 !important; }
 
-        /* Botão Secundário (Azul Escuro - Para o Hub) */
-        button[kind="secondary"] {
+        div.stButton > button[kind="secondary"] {
             background-color: #23235B !important; color: white !important;
             border: 1px solid #4A4A8C !important; border-radius: 6px !important; font-weight: bold !important;
             height: 45px !important; margin-bottom: 5px !important;
         }
-        button[kind="secondary"]:hover { background-color: #2D2D70 !important; border-color: #FF8C00 !important; }
+        div.stButton > button[kind="secondary"]:hover { background-color: #2D2D70 !important; border-color: #FF8C00 !important; }
         </style>
     """, unsafe_allow_html=True)
 
 def aplicar_css_painel():
-    """CSS para Dashboard e Registro (Fundo Cinza, Cabeçalhos Azuis, Estilo Windows)"""
+    """CSS para Dashboard e Registro - BLINDADO CONTRA TEMA ESCURO"""
     st.markdown("""
         <style>
         #MainMenu {visibility: hidden;} header {visibility: hidden;} footer {visibility: hidden;}
         /* Fundo do Sistema */
         .stApp { background-color: #F0F2F6 !important; }
-        .block-container { padding-top: 1rem !important; max-width: 98% !important; }
+        .block-container { padding-top: 1rem !important; padding-bottom: 1rem !important; max-width: 98% !important; }
         
         /* Barra Superior Simulada */
         .barra-superior {
             background-color: #19194D; color: white; padding: 10px 15px; border-radius: 4px;
-            display: flex; align-items: center; margin-bottom: 15px; font-weight: bold;
+            display: flex; align-items: center; margin-bottom: 10px; font-weight: bold;
         }
         
-        /* Cartões Brancos (Containers das Tabelas e Gráficos) */
+        /* Cartões Brancos */
         .card-branco {
-            background-color: white; border-radius: 4px; padding: 15px;
+            background-color: #FFFFFF !important; border-radius: 4px; padding: 15px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 15px; border: 1px solid #E0E0E0;
         }
         
-        /* Títulos Cinzas dos Cartões */
         .titulo-cartao { font-size: 13px; font-weight: bold; color: #555555; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #EEEEEE; padding-bottom: 5px; }
         
-        /* Inputs Claros */
-        .stTextInput input, .stSelectbox div[data-baseweb="select"] { background-color: white !important; border-radius: 4px !important; border: 1px solid #CCC !important; }
+        /* === CORREÇÃO DE LEITURA E ESPAÇAMENTO DO FORMULÁRIO === */
         
-        /* Botões */
-        button[kind="secondary"] { background-color: white !important; color: #19194D !important; border: 1px solid #19194D !important; font-weight: bold !important; }
-        button[kind="primary"] { background-color: #2E7D32 !important; color: white !important; border: none !important; font-weight: bold !important; } /* Verde para Salvar */
+        /* Força textos para Azul Escuro/Preto */
+        .stTextInput label p, .stSelectbox label p, .stDateInput label p, .stTimeInput label p {
+            color: #19194D !important; font-weight: 700 !important; font-size: 12px !important; text-transform: uppercase;
+        }
+        
+        /* Força inputs e dropdowns para Branco com texto Preto */
+        .stTextInput input, .stSelectbox div[data-baseweb="select"], .stDateInput input, .stTimeInput input { 
+            background-color: #FFFFFF !important; color: #000000 !important; border-radius: 4px !important; border: 1px solid #CCCCCC !important; 
+        }
+        
+        /* Reduz os espaços em branco (gaps) do Streamlit */
+        div[data-testid="stForm"] [data-testid="stVerticalBlock"] { gap: 0.1rem !important; }
+        div[data-testid="stForm"] { padding: 15px !important; background-color: #F8F9FA !important; border: 1px solid #E0E0E0 !important;}
+
+        /* Botões do Painel */
+        div.stButton > button[kind="secondary"] { background-color: white !important; color: #19194D !important; border: 1px solid #19194D !important; font-weight: bold !important; height: 42px !important; }
+        
+        /* Botão Salvar Verde */
+        div.stButton > button[kind="primary"], div[data-testid="stFormSubmitButton"] > button { 
+            background-color: #2E7D32 !important; color: white !important; border: none !important; font-weight: bold !important; height: 45px !important; margin-top: 10px !important;
+        }
+        div.stButton > button[kind="primary"] p, div[data-testid="stFormSubmitButton"] > button p { color: white !important; }
         
         /* Métricas */
         div[data-testid="stMetricValue"] > div { color: #19194D !important; font-size: 48px !important; font-weight: bold !important; }
+        div[data-testid="stMetricLabel"] > div p { color: #555 !important; font-weight: bold !important; }
         </style>
     """, unsafe_allow_html=True)
 
@@ -186,26 +196,24 @@ def tela_hub():
 def tela_registro():
     aplicar_css_painel()
     
-    # Barra Superior Identica ao Desktop
     col_v, col_t = st.columns([1, 10])
     with col_v: 
-        if st.button("⬅ VOLTAR", use_container_width=True): navegar("hub")
+        if st.button("⬅ VOLTAR", type="secondary", use_container_width=True): navegar("hub")
     with col_t: 
         st.markdown("<div class='barra-superior'>CENTRAL DE MONITORAMENTO - REGISTRO E DESPACHO</div>", unsafe_allow_html=True)
 
-    # Layout em 3 Colunas como na Imagem
     col_form, col_meio, col_mapa = st.columns([1.2, 1.2, 2])
     
     with col_form:
         with st.form("form_registro", clear_on_submit=True):
-            solicitante = st.text_input("SOLICITANTE", placeholder="Nome completo do solicitante")
+            solicitante = st.text_input("SOLICITANTE", placeholder="Nome completo")
             municipio = st.text_input("MUNICÍPIO", value="Manaus")
             bairro = st.text_input("BAIRRO", placeholder="Bairro da ocorrência")
             endereco = st.text_input("LOGRADOURO (RUA / AV)", placeholder="Rua/Logradouro")
             
             c_num, c_comp = st.columns([1, 2])
             numero = c_num.text_input("NÚMERO", placeholder="Nº")
-            complemento = c_comp.text_input("COMPLEMENTO", placeholder="Ex: Apto 101, Fundos")
+            complemento = c_comp.text_input("COMPLEMENTO", placeholder="Ex: Apto 101")
             
             natureza = st.selectbox("NATUREZA DA OCORRÊNCIA", ["Alagamento", "Incêndio", "Deslizamento", "Desabamento", "Outros"])
             risco = st.selectbox("GRAU DE RISCO", ["BAIXO", "MÉDIO", "ALTO", "CRÍTICO"])
@@ -216,24 +224,23 @@ def tela_registro():
             
             encaminhamento = st.selectbox("ÓRGÃO DE ENCAMINHAMENTO", ["Aguardando Triagem", "Polícia Militar", "Corpo de Bombeiros", "Defesa Civil Municipal"])
             
-            submit = st.form_submit_button("SALVAR OCORRÊNCIA", type="primary", use_container_width=True)
+            submit = st.form_submit_button("SALVAR OCORRÊNCIA", use_container_width=True)
 
     with col_meio:
-        st.markdown("<div class='card-branco'>", unsafe_allow_html=True)
+        st.markdown("<div class='card-branco' style='height: 100%;'>", unsafe_allow_html=True)
         st.markdown("<div class='titulo-cartao'>MONITORAMENTO DO TURNO</div>", unsafe_allow_html=True)
         c_and, c_fin = st.columns(2)
         c_and.metric("EM ANDAMENTO", "0")
         c_fin.metric("FINALIZADOS", "0")
         st.write("---")
-        st.markdown("<div style='font-size: 11px; font-weight: bold; color: #555;'>TIPO &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RISCO &nbsp;&nbsp;&nbsp;&nbsp; STATUS &nbsp;&nbsp;&nbsp;&nbsp; AÇÃO</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size: 11px; font-weight: bold; color: #555; background: #eee; padding: 5px;'>TIPO &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RISCO &nbsp;&nbsp;&nbsp;&nbsp; STATUS &nbsp;&nbsp;&nbsp;&nbsp; AÇÃO</div>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
         
     with col_mapa:
         st.info("📍 Toque no mapa para capturar a coordenada exata da ocorrência.")
         m_registro = folium.Map(location=[-3.119, -60.021], zoom_start=12, tiles="OpenStreetMap")
-        mapa_clicado = st_folium(m_registro, height=550, use_container_width=True, key="mapa_novo")
+        mapa_clicado = st_folium(m_registro, height=520, use_container_width=True, key="mapa_novo")
 
-    # Lógica de Salvamento
     if submit:
         if not bairro or not endereco: st.warning("Preencha Bairro e Logradouro.")
         elif not mapa_clicado.get("last_clicked"): st.warning("Toque no mapa para marcar a coordenada!")
@@ -251,14 +258,12 @@ def tela_dashboard():
     df = carregar_dados()
     if df.empty: st.info("Sem dados."); return
 
-    # Barra Superior
     col_v, col_t = st.columns([1, 10])
     with col_v: 
-        if st.button("⬅ VOLTAR", use_container_width=True): navegar("hub")
+        if st.button("⬅ VOLTAR", type="secondary", use_container_width=True): navegar("hub")
     with col_t: 
         st.markdown("<div class='barra-superior'>PAINEL DE ATENDIMENTO DO CALL CENTER - DEFESA CIVIL DO ESTADO DO AMAZONAS</div>", unsafe_allow_html=True)
 
-    # Filtros Embaixo da Barra
     c_f1, c_f2, c_f3, c_f4, c_f5 = st.columns(5)
     f_tipo = c_f1.selectbox("NATUREZA", ["Todas"] + sorted(df['tipo'].dropna().unique().tolist()))
     f_mun = c_f2.selectbox("MUNICÍPIO", ["Todas"] + sorted(df['municipio'].dropna().unique().tolist())) 
@@ -270,10 +275,9 @@ def tela_dashboard():
     if f_tipo != "Todas": df_f = df_f[df_f['tipo'] == f_tipo]
     if f_mun != "Todas": df_f = df_f[df_f['municipio'] == f_mun]
     if f_bairro != "Todos": df_f = df_f[df_f['bairro'] == f_bairro]
-    if f_ano != "Todos": df_f = df_f[df_f['Ano_Filtro'] == f_ano]
+    if f_ano != "Todas": df_f = df_f[df_f['Ano_Filtro'] == f_ano]
     if f_mes != "Todos": df_f = df_f[df_f['Mes_Filtro'] == f_mes]
 
-    # Grid Principal
     col_esq, col_dir = st.columns([1, 1.8])
     
     with col_esq:
@@ -321,7 +325,7 @@ def tela_admin():
     aplicar_css_painel()
     col_v, col_t = st.columns([1, 10])
     with col_v: 
-        if st.button("⬅ VOLTAR", use_container_width=True): navegar("hub")
+        if st.button("⬅ VOLTAR", type="secondary", use_container_width=True): navegar("hub")
     with col_t: 
         st.markdown("<div class='barra-superior' style='background-color: #8B0000;'>PAINEL DO ADMINISTRADOR DE SISTEMAS</div>", unsafe_allow_html=True)
     
