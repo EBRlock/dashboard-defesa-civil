@@ -4,6 +4,7 @@ import folium
 from streamlit_folium import st_folium
 import plotly.express as px
 from datetime import datetime
+import requests
 from core.database import obter_referencia
 
 # ==========================================
@@ -16,6 +17,9 @@ st.set_page_config(page_title="Sistema Defesa Civil", layout="wide", initial_sid
 # ==========================================
 if "autenticado" not in st.session_state: st.session_state["autenticado"] = False
 if "rota" not in st.session_state: st.session_state["rota"] = "login"
+if "endereco_capturado" not in st.session_state: st.session_state["endereco_capturado"] = ""
+if "lat_capturada" not in st.session_state: st.session_state["lat_capturada"] = None
+if "lon_capturada" not in st.session_state: st.session_state["lon_capturada"] = None
 
 def navegar(nova_rota):
     st.session_state["rota"] = nova_rota
@@ -57,17 +61,29 @@ def carregar_dados():
         st.error(f"Erro de conexão: {e}")
         return pd.DataFrame()
 
+def buscar_endereco_por_coordenada(lat, lon):
+    """Faz a engenharia reversa para achar o nome da rua baseado no clique do mapa"""
+    try:
+        url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}"
+        headers = {'User-Agent': 'DefesaCivilApp/1.0'}
+        response = requests.get(url, headers=headers).json()
+        return response.get('display_name', 'Endereço não encontrado no satélite')
+    except:
+        return ""
+
 # ==========================================
-# 4. CSS DINÂMICO (Login/Hub VS Telas Internas)
+# 4. CSS DINÂMICO (Tema Escuro vs Tema Claro)
 # ==========================================
-def aplicar_css_desktop():
-    """CSS do Login e Hub (Aprovado pelo Usuário)"""
+def aplicar_css_escuro():
+    """CSS para Login, Hub e Registro (Fundo Azul Escuro, Textos Maiores, Sem Espaços)"""
     st.markdown("""
         <style>
         #MainMenu {visibility: hidden;} header {visibility: hidden;} footer {visibility: hidden;}
         .stApp { background-color: #19194D !important; }
+        .block-container { padding-top: 1.5rem !important; padding-bottom: 1rem !important; max-width: 98% !important; }
         
-        [data-testid="column"]:nth-of-type(2) {
+        /* Ajuste do Cartão Central do Login */
+        .cartao-login {
             background-color: rgba(255, 255, 255, 0.08) !important;
             border-radius: 12px !important; padding: 40px !important;
             border: 1px solid rgba(255, 255, 255, 0.2) !important;
@@ -75,17 +91,28 @@ def aplicar_css_desktop():
             margin-top: 8vh !important; text-align: center;
         }
 
-        h1, h2, h3, p, label { color: #FFFFFF !important; font-family: 'Segoe UI', Arial, sans-serif !important; }
-        .texto-laranja { color: #FF8C00 !important; font-weight: bold; font-size: 14px; letter-spacing: 1px;}
+        /* Textos, Labels e Fontes Maiores */
+        h1, h2, h3, h4, h5, h6, p, label { color: #FFFFFF !important; font-family: 'Segoe UI', Arial, sans-serif !important; }
+        .texto-laranja { color: #FF8C00 !important; font-weight: bold; font-size: 15px; letter-spacing: 1px;}
         
-        .stTextInput input {
-            background-color: #23235B !important; color: white !important;
-            border: 1px solid #4A4A8C !important; border-radius: 4px !important;
+        /* Esmagando os espaços e aumentando a fonte no Registro */
+        .stTextInput label p, .stSelectbox label p, .stDateInput label p, .stTimeInput label p {
+            font-size: 15px !important; font-weight: bold !important; margin-bottom: 2px !important;
         }
         
+        .stTextInput input, .stSelectbox div[data-baseweb="select"], .stDateInput input, .stTimeInput input {
+            background-color: #23235B !important; color: white !important;
+            border: 1px solid #4A4A8C !important; border-radius: 4px !important;
+            font-size: 15px !important; padding: 6px 10px !important;
+        }
+        
+        /* Reduzindo o GAP (espaçamento) geral */
+        [data-testid="stVerticalBlock"] { gap: 0.5rem !important; }
+        
+        /* Botões */
         div.stButton > button[kind="primary"] {
             background-color: #FF8C00 !important; color: white !important;
-            border: none !important; border-radius: 6px !important; font-weight: bold !important;
+            border: none !important; border-radius: 6px !important; font-weight: bold !important; font-size: 16px !important;
             height: 45px !important; margin-top: 10px !important;
         }
         div.stButton > button[kind="primary"]:hover { background-color: #E67E00 !important; }
@@ -96,85 +123,30 @@ def aplicar_css_desktop():
             height: 45px !important; margin-bottom: 5px !important;
         }
         div.stButton > button[kind="secondary"]:hover { background-color: #2D2D70 !important; border-color: #FF8C00 !important; }
+        
+        /* Barra Superior Simulada no Registro */
+        .barra-superior-dark {
+            background-color: #0B0B2A; color: white; padding: 12px 15px; border-radius: 4px;
+            display: flex; align-items: center; margin-bottom: 10px; font-weight: bold; font-size: 18px;
+            border: 1px solid #4A4A8C;
+        }
         </style>
     """, unsafe_allow_html=True)
 
-def aplicar_css_painel():
-    """CSS NOVO: Totalmente blindado para legibilidade e espaçamento correto"""
+def aplicar_css_dashboard():
+    """CSS Claro apenas para o Painel de Monitoramento"""
     st.markdown("""
         <style>
         #MainMenu {visibility: hidden;} header {visibility: hidden;} footer {visibility: hidden;}
-        
-        /* Fundo Limpo e Claro para a área de trabalho */
-        .stApp { background-color: #F4F7F9 !important; }
-        .block-container { max-width: 95% !important; padding-top: 2rem !important; }
-
-        /* Barra Superior (Top Bar) */
-        .barra-superior {
-            background-color: #19194D; color: #FFFFFF; padding: 12px 20px; border-radius: 6px;
-            font-weight: 800; font-size: 18px; text-transform: uppercase;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 25px;
-        }
-
-        /* Cartões Brancos (Containers para formulários e gráficos) */
-        .card-branco {
-            background-color: #FFFFFF !important; border-radius: 8px; padding: 25px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #E2E8F0;
-            height: 100%;
-        }
-        
-        .titulo-cartao { 
-            font-size: 14px; font-weight: 800; color: #19194D; 
-            text-transform: uppercase; margin-bottom: 20px; 
-            border-bottom: 2px solid #F1F5F9; padding-bottom: 8px; 
-        }
-
-        /* ========================================================
-           A BLINDAGEM DOS INPUTS (Contra o Tema Escuro) 
-           ======================================================== */
-        
-        /* Letras e Labels dos formulários */
-        label, p, .stMarkdown { color: #1E293B !important; font-weight: 600 !important; font-size: 13px !important; }
-        
-        /* Força TODOS os campos a serem Brancos com texto Preto */
-        input, select, textarea, div[data-baseweb="select"] > div, .stDateInput > div > div > input, .stTimeInput > div > div > input {
-            background-color: #FFFFFF !important; 
-            color: #000000 !important; 
-            border: 1px solid #CBD5E1 !important; 
-            border-radius: 6px !important;
-            padding: 8px !important;
-        }
-        
-        /* Dropdowns abertos (Lista de opções) */
-        ul[data-baseweb="menu"] { background-color: #FFFFFF !important; color: #000000 !important; border: 1px solid #CBD5E1 !important; }
-        li[role="option"] { color: #000000 !important; }
-
-        /* Arrumando o espaçamento do formulário */
-        div[data-testid="stForm"] { background-color: #FFFFFF !important; border: none !important; padding: 0 !important; }
-        
-        /* Consertando os Alertas (Aquelas caixas amarelas/vermelhas de erro) */
-        div[data-testid="stAlert"] {
-            background-color: #FFFFFF !important;
-            border: 1px solid #CBD5E1 !important;
-            border-left: 6px solid #19194D !important; /* Linha lateral azul */
-            color: #1E293B !important;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05) !important;
-        }
-        div[data-testid="stAlert"] p { color: #1E293B !important; font-size: 15px !important; font-weight: bold !important; }
-
-        /* Botões */
-        div.stButton > button[kind="secondary"] { 
-            background-color: #FFFFFF !important; color: #19194D !important; 
-            border: 2px solid #19194D !important; font-weight: bold !important; height: 48px !important; 
-        }
-        div.stButton > button[kind="primary"], div[data-testid="stFormSubmitButton"] > button { 
-            background-color: #2E7D32 !important; color: #FFFFFF !important; 
-            border: none !important; font-weight: bold !important; height: 48px !important; margin-top: 15px !important;
-        }
-        div.stButton > button[kind="primary"] p, div[data-testid="stFormSubmitButton"] > button p { color: #FFFFFF !important; font-size: 16px !important; }
-        
-        /* Métricas Gigantes */
-        div[data-testid="stMetricValue"] > div { color: #19194D !important; font-size: 50px !important; font-weight: 900 !important; }
+        .stApp { background-color: #F0F2F6 !important; }
+        .block-container { padding-top: 1rem !important; max-width: 98% !important; }
+        .barra-superior { background-color: #19194D; color: white; padding: 10px 15px; border-radius: 4px; margin-bottom: 15px; font-weight: bold; }
+        .card-branco { background-color: white; border-radius: 4px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 15px; border: 1px solid #E0E0E0; }
+        .titulo-cartao { font-size: 13px; font-weight: bold; color: #555555; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #EEEEEE; padding-bottom: 5px; }
+        .stTextInput input, .stSelectbox div[data-baseweb="select"] { background-color: white !important; color: black !important; border-radius: 4px !important; border: 1px solid #CCC !important; }
+        .stTextInput label p, .stSelectbox label p { color: #19194D !important; font-weight: bold !important; }
+        div.stButton > button[kind="secondary"] { background-color: white !important; color: #19194D !important; border: 1px solid #19194D !important; font-weight: bold !important; }
+        div[data-testid="stMetricValue"] > div { color: #19194D !important; font-size: 48px !important; font-weight: bold !important; }
         </style>
     """, unsafe_allow_html=True)
 
@@ -183,10 +155,11 @@ def aplicar_css_painel():
 # ==========================================
 
 def tela_login():
-    aplicar_css_desktop()
+    aplicar_css_escuro()
     _, col_centro, _ = st.columns([1.5, 2, 1.5])
     
     with col_centro:
+        st.markdown('<div class="cartao-login">', unsafe_allow_html=True)
         st.image("https://raw.githubusercontent.com/EBRlock/dashboard-defesa-civil/main/assets/logo_defesa.png", width=120)
         st.markdown("<h2 style='margin-top: 10px;'>DEFESA CIVIL</h2>", unsafe_allow_html=True)
         st.markdown("<p class='texto-laranja'>ACESSO RESTRITO</p>", unsafe_allow_html=True)
@@ -199,12 +172,14 @@ def tela_login():
             if (usuario == "gestaodefesacivil" and senha == "defesacivilam26") or (usuario == "admin" and senha == "1234"):
                 st.session_state["autenticado"] = True; navegar("hub")
             else: st.error("Credenciais inválidas.")
+        st.markdown('</div>', unsafe_allow_html=True)
 
 def tela_hub():
-    aplicar_css_desktop()
+    aplicar_css_escuro()
     _, col_centro, _ = st.columns([1.5, 2, 1.5])
     
     with col_centro:
+        st.markdown('<div class="cartao-login">', unsafe_allow_html=True)
         st.image("https://raw.githubusercontent.com/EBRlock/dashboard-defesa-civil/main/assets/logo_defesa.png", width=120)
         st.markdown("<h2 style='margin-top: 10px;'>DEFESA CIVIL</h2>", unsafe_allow_html=True)
         st.markdown("<p class='texto-laranja'>BEM-VINDO, ADMINISTRADOR GERAL<br>[ADMINISTRADOR]</p>", unsafe_allow_html=True)
@@ -217,82 +192,84 @@ def tela_hub():
         st.write("")
         if st.button("SAIR DO SISTEMA", type="primary", use_container_width=True):
             st.session_state["autenticado"] = False; navegar("login")
+        st.markdown('</div>', unsafe_allow_html=True)
 
 def tela_registro():
-    aplicar_css_painel()
+    aplicar_css_escuro()
     
     col_v, col_t = st.columns([1, 10])
     with col_v: 
         if st.button("⬅ VOLTAR", type="secondary", use_container_width=True): navegar("hub")
     with col_t: 
-        st.markdown("<div class='barra-superior'>CENTRAL DE MONITORAMENTO - REGISTRO E DESPACHO</div>", unsafe_allow_html=True)
+        st.markdown("<div class='barra-superior-dark'>CENTRAL DE MONITORAMENTO - REGISTRO E DESPACHO</div>", unsafe_allow_html=True)
 
-    # Novo espaçamento e encapsulamento dos formulários
-    col_form, col_meio, col_mapa = st.columns([1.5, 1.2, 2.5])
+    col_form, col_mapa = st.columns([1.5, 2])
     
-    with col_form:
-        st.markdown("<div class='card-branco'>", unsafe_allow_html=True)
-        with st.form("form_registro", clear_on_submit=True):
-            st.markdown("<div class='titulo-cartao'>Dados da Ocorrência</div>", unsafe_allow_html=True)
-            
-            solicitante = st.text_input("SOLICITANTE", placeholder="Nome completo")
-            municipio = st.text_input("MUNICÍPIO", value="Manaus")
-            bairro = st.text_input("BAIRRO", placeholder="Bairro da ocorrência")
-            endereco = st.text_input("LOGRADOURO (RUA / AV)", placeholder="Rua/Logradouro")
-            
-            c_num, c_comp = st.columns([1, 2])
-            numero = c_num.text_input("NÚMERO", placeholder="Nº")
-            complemento = c_comp.text_input("COMPLEMENTO", placeholder="Ex: Apto 101")
-            
-            st.write("") # Espaço de respiro
-            natureza = st.selectbox("NATUREZA DA OCORRÊNCIA", ["Alagamento", "Incêndio", "Deslizamento", "Desabamento", "Outros"])
-            risco = st.selectbox("GRAU DE RISCO", ["BAIXO", "MÉDIO", "ALTO", "CRÍTICO"])
-            
-            c_data, c_hora = st.columns(2)
-            data_ocorrencia = c_data.date_input("DATA DO REGISTRO")
-            hora_ocorrencia = c_hora.time_input("HORA")
-            
-            st.write("")
-            encaminhamento = st.selectbox("ÓRGÃO DE ENCAMINHAMENTO", ["Aguardando Triagem", "Polícia Militar", "Corpo de Bombeiros", "Defesa Civil Municipal"])
-            
-            submit = st.form_submit_button("SALVAR OCORRÊNCIA", use_container_width=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with col_meio:
-        st.markdown("<div class='card-branco'>", unsafe_allow_html=True)
-        st.markdown("<div class='titulo-cartao'>MONITORAMENTO DO TURNO</div>", unsafe_allow_html=True)
-        c_and, c_fin = st.columns(2)
-        c_and.metric("EM ANDAMENTO", "0")
-        c_fin.metric("FINALIZADOS", "0")
-        st.write("---")
-        st.markdown("<div style='font-size: 11px; font-weight: bold; color: #555; background: #eee; padding: 10px; border-radius: 4px;'>TIPO &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RISCO &nbsp;&nbsp;&nbsp;&nbsp; STATUS &nbsp;&nbsp;&nbsp;&nbsp; AÇÃO</div>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-        
+    # 1. ÁREA DO MAPA (Processado antes para atualizar os inputs)
     with col_mapa:
-        st.markdown("<div class='card-branco'>", unsafe_allow_html=True)
-        st.info("📍 Toque no mapa abaixo para capturar a coordenada exata da ocorrência.")
-        m_registro = folium.Map(location=[-3.119, -60.021], zoom_start=12, tiles="OpenStreetMap")
-        mapa_clicado = st_folium(m_registro, height=600, use_container_width=True, key="mapa_novo")
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("<p class='texto-laranja'>📍 Toque no mapa abaixo para capturar o endereço exato</p>", unsafe_allow_html=True)
+        m_registro = folium.Map(location=[-3.119, -60.021], zoom_start=12, tiles="CartoDB dark_matter")
+        mapa_clicado = st_folium(m_registro, height=450, use_container_width=True, key="mapa_novo")
+        
+        # Lógica de Captura do Mapa
+        if mapa_clicado.get("last_clicked"):
+            lat = mapa_clicado["last_clicked"]["lat"]
+            lon = mapa_clicado["last_clicked"]["lng"]
+            
+            # Só busca na internet se for um clique novo (evita lentidão)
+            if lat != st.session_state["lat_capturada"]:
+                st.session_state["lat_capturada"] = lat
+                st.session_state["lon_capturada"] = lon
+                endereco_satelite = buscar_endereco_por_coordenada(lat, lon)
+                st.session_state["endereco_capturado"] = endereco_satelite
+                st.rerun() # Força a tela a atualizar com o novo endereço preenchido
 
-    if submit:
-        if not bairro or not endereco: st.warning("Preencha Bairro e Logradouro.")
-        elif not mapa_clicado.get("last_clicked"): st.warning("Toque no mapa para marcar a coordenada exata!")
-        else:
-            lat, lon = mapa_clicado["last_clicked"]["lat"], mapa_clicado["last_clicked"]["lng"]
-            end_completo = f"{endereco}, {numero} - {complemento}"
-            novo_registro = {"tipo": natureza, "municipio": municipio, "bairro": bairro, "endereco": end_completo, "risco": risco, "encaminhamento": encaminhamento, "data": data_ocorrencia.strftime("%d/%m/%Y"), "solicitante": solicitante, "latitude": lat, "longitude": lon}
-            try:
-                obter_referencia("ocorrencias").push(novo_registro)
-                st.success("Ocorrência salva com sucesso no banco de dados!")
-                st.balloons()
-                carregar_dados.clear()
-            except Exception as e: st.error(f"Erro: {e}")
+        # Exibe Feedback Visual
+        if st.session_state["lat_capturada"]:
+            st.success("✅ Coordenada e Endereço capturados com sucesso pelo Satélite!")
+
+    # 2. ÁREA DO FORMULÁRIO (Agora sem st.form para não apagar ao clicar no mapa)
+    with col_form:
+        solicitante = st.text_input("SOLICITANTE", placeholder="Nome completo", key="f_sol")
+        municipio = st.text_input("MUNICÍPIO", value="Manaus", key="f_mun")
+        bairro = st.text_input("BAIRRO", placeholder="Bairro da ocorrência", key="f_bai")
+        
+        # Aqui a mágica acontece: O campo de endereço é preenchido automaticamente pela sessão do mapa
+        endereco = st.text_input("LOGRADOURO (ENDEREÇO CAPTURADO)", value=st.session_state["endereco_capturado"], key="f_end")
+        
+        c_num, c_comp = st.columns([1, 2])
+        numero = c_num.text_input("NÚMERO", placeholder="Nº", key="f_num")
+        complemento = c_comp.text_input("COMPLEMENTO", placeholder="Ex: Apto 101", key="f_comp")
+        
+        natureza = st.selectbox("NATUREZA DA OCORRÊNCIA", ["Alagamento", "Incêndio", "Deslizamento", "Desabamento", "Outros"], key="f_nat")
+        risco = st.selectbox("GRAU DE RISCO", ["BAIXO", "MÉDIO", "ALTO", "CRÍTICO"], key="f_risc")
+        
+        c_data, c_hora = st.columns(2)
+        data_ocorrencia = c_data.date_input("DATA DO REGISTRO", key="f_dat")
+        hora_ocorrencia = c_hora.time_input("HORA", key="f_hor")
+        
+        encaminhamento = st.selectbox("ÓRGÃO DE ENCAMINHAMENTO", ["Aguardando Triagem", "Polícia Militar", "Corpo de Bombeiros", "Defesa Civil Municipal"], key="f_enc")
+        
+        if st.button("SALVAR OCORRÊNCIA", type="primary", use_container_width=True):
+            if not bairro or not endereco: st.warning("Preencha Bairro e Logradouro.")
+            elif not st.session_state["lat_capturada"]: st.warning("Toque no mapa para capturar a coordenada!")
+            else:
+                lat, lon = st.session_state["lat_capturada"], st.session_state["lon_capturada"]
+                end_completo = f"{endereco}, {numero} - {complemento}"
+                novo_registro = {"tipo": natureza, "municipio": municipio, "bairro": bairro, "endereco": end_completo, "risco": risco, "encaminhamento": encaminhamento, "data": data_ocorrencia.strftime("%d/%m/%Y"), "solicitante": solicitante, "latitude": lat, "longitude": lon}
+                try:
+                    obter_referencia("ocorrencias").push(novo_registro)
+                    st.success("Ocorrência Salva!"); st.balloons()
+                    carregar_dados.clear()
+                    # Reseta a sessão após salvar
+                    st.session_state["endereco_capturado"] = ""
+                    st.session_state["lat_capturada"] = None
+                except Exception as e: st.error(f"Erro: {e}")
 
 def tela_dashboard():
-    aplicar_css_painel()
+    aplicar_css_dashboard()
     df = carregar_dados()
-    if df.empty: st.info("Sem dados no sistema."); return
+    if df.empty: st.info("Sem dados."); return
 
     col_v, col_t = st.columns([1, 10])
     with col_v: 
@@ -300,14 +277,12 @@ def tela_dashboard():
     with col_t: 
         st.markdown("<div class='barra-superior'>PAINEL DE ATENDIMENTO DO CALL CENTER - DEFESA CIVIL DO ESTADO DO AMAZONAS</div>", unsafe_allow_html=True)
 
-    st.markdown("<div class='card-branco'>", unsafe_allow_html=True)
     c_f1, c_f2, c_f3, c_f4, c_f5 = st.columns(5)
     f_tipo = c_f1.selectbox("NATUREZA", ["Todas"] + sorted(df['tipo'].dropna().unique().tolist()))
     f_mun = c_f2.selectbox("MUNICÍPIO", ["Todas"] + sorted(df['municipio'].dropna().unique().tolist())) 
     f_bairro = c_f3.selectbox("BAIRRO", ["Todos"] + sorted(df['bairro'].dropna().unique().tolist())) 
     f_ano = c_f4.selectbox("ANO", ["Todos"] + sorted([a for a in df['Ano_Filtro'].unique() if a != 'Desconhecido'])) 
     f_mes = c_f5.selectbox("MÊS", ["Todos"] + sorted([m for m in df['Mes_Filtro'].unique() if m != 'Desconhecido'])) 
-    st.markdown("</div>", unsafe_allow_html=True)
     
     df_f = df.copy()
     if f_tipo != "Todas": df_f = df_f[df_f['tipo'] == f_tipo]
@@ -317,7 +292,6 @@ def tela_dashboard():
     if f_mes != "Todas": df_f = df_f[df_f['Mes_Filtro'] == f_mes]
 
     col_esq, col_dir = st.columns([1, 1.8])
-    
     with col_esq:
         c_nat, c_enc = st.columns(2)
         with c_nat:
@@ -337,33 +311,30 @@ def tela_dashboard():
         with c_piz:
             st.markdown("<div class='card-branco'><div class='titulo-cartao'>Nível de Risco</div>", unsafe_allow_html=True)
             fig_pie = px.pie(df_f['risco_padrao'].value_counts().reset_index(), values='count', names='risco_padrao', hole=0.4, color='risco_padrao', color_discrete_map=CORES_RISCO_HEX)
-            fig_pie.update_layout(height=150, margin=dict(t=0, b=0, l=0, r=0), showlegend=True, paper_bgcolor='rgba(0,0,0,0)', font=dict(color='black'))
+            fig_pie.update_layout(height=150, margin=dict(t=0, b=0, l=0, r=0), showlegend=True)
             st.plotly_chart(fig_pie, use_container_width=True, theme=None)
             st.markdown("</div>", unsafe_allow_html=True)
 
     with col_dir:
-        st.markdown("<div class='card-branco'>", unsafe_allow_html=True)
-        st.markdown("<div class='titulo-cartao'>Mapa Operacional</div>", unsafe_allow_html=True)
         m = folium.Map(location=[-3.119, -60.021], zoom_start=11.5, tiles="OpenStreetMap") 
         for _, row in df_f.iterrows():
             try:
                 lat, lon = float(row['latitude']), float(row['longitude'])
                 folium.Marker([lat, lon], tooltip=row.get('tipo', 'Ocorrência'), icon=folium.Icon(color=CORES_RISCO_PINO.get(row.get('risco_padrao', 'MÉDIO'), 'gray'))).add_to(m)
             except: continue
-        st_folium(m, use_container_width=True, height=350)
-        st.markdown("</div>", unsafe_allow_html=True)
+        st_folium(m, use_container_width=True, height=300)
         
         st.markdown("<div class='card-branco'><div class='titulo-cartao'>Registros por Mês</div>", unsafe_allow_html=True)
         df_g = df_f[df_f['Mes_Filtro'] != 'Desconhecido']
         if not df_g.empty:
             fig_bar = px.bar(df_g['Mes_Filtro'].value_counts().reset_index().sort_values(by='Mes_Filtro'), x='Mes_Filtro', y='count')
             fig_bar.update_traces(marker_color='#19194D') 
-            fig_bar.update_layout(height=120, margin=dict(t=0, b=0, l=0, r=0), xaxis_title=None, yaxis_title=None, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+            fig_bar.update_layout(height=120, margin=dict(t=0, b=0, l=0, r=0), xaxis_title=None, yaxis_title=None)
             st.plotly_chart(fig_bar, use_container_width=True, theme=None)
         st.markdown("</div>", unsafe_allow_html=True)
 
 def tela_admin():
-    aplicar_css_painel()
+    aplicar_css_dashboard()
     col_v, col_t = st.columns([1, 10])
     with col_v: 
         if st.button("⬅ VOLTAR", type="secondary", use_container_width=True): navegar("hub")
@@ -373,16 +344,14 @@ def tela_admin():
     df = carregar_dados()
     if df.empty: st.info("Banco vazio."); return
     
-    st.markdown("<div class='card-branco'><div class='titulo-cartao'>Banco de Dados (Auditoria e Exclusão)</div>", unsafe_allow_html=True)
+    st.markdown("<div class='card-branco'><div class='titulo-cartao'>Banco de Dados (Exclusão)</div>", unsafe_allow_html=True)
     opcoes = {f"{row.get('data', '')} | {row.get('tipo', '')} | {row.get('bairro', '')} [ID: {idx}]": idx for idx, row in df.iterrows()}
-    selecao = st.selectbox("Selecione o registro alvo para exclusão:", list(opcoes.keys()))
-    
-    st.write("")
-    if st.button("EXCLUIR REGISTRO PERMANENTEMENTE", type="primary"):
+    selecao = st.selectbox("Selecione para excluir:", list(opcoes.keys()))
+    if st.button("EXCLUIR REGISTRO", type="primary"):
         try:
             obter_referencia(f"ocorrencias/{opcoes[selecao]}").delete()
-            st.success("Exclusão realizada com sucesso. Sincronizando banco..."); carregar_dados.clear(); st.rerun()
-        except Exception as e: st.error(f"Erro ao processar: {e}")
+            st.success("Excluído!"); carregar_dados.clear(); st.rerun()
+        except Exception as e: st.error(e)
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ==========================================
