@@ -38,19 +38,41 @@ CORES_RISCO_HEX = {'ALTO': '#FF9800', 'MÉDIO': '#FFEB3B', 'MEDIO': '#FFEB3B', '
 CORES_RISCO_PINO = {'ALTO': 'orange', 'MÉDIO': 'beige', 'MEDIO': 'beige', 'BAIXO': 'green', 'CRÍTICO': 'red', 'CRITICO': 'red'}
 
 @st.cache_data(ttl=60)
+@st.cache_data(ttl=60)
 def carregar_dados():
     try:
         ref = obter_referencia("ocorrencias")
         dados = ref.get()
         if not dados: return pd.DataFrame()
+        
         df = pd.DataFrame.from_dict(dados, orient='index')
+        
+        # === A TRAVA DE SEGURANÇA QUE FALTAVA ===
+        # Garante que as colunas existam no painel, mesmo que os dados antigos do Firebase não tenham elas.
+        colunas_padrao = {
+            'tipo': 'Não Informado', 
+            'encaminhamento': 'Não Informado', 
+            'risco': 'MÉDIO', 
+            'data': '', 
+            'bairro': 'Não Informado', 
+            'municipio': 'Manaus',
+            'latitude': 0.0,
+            'longitude': 0.0
+        }
+        for col, padrao in colunas_padrao.items():
+            if col not in df.columns: 
+                df[col] = padrao
+        # ========================================
+
         df['tipo_emoji'] = df['tipo'].apply(adicionar_emoji_natureza)
         df['risco_padrao'] = df['risco'].astype(str).str.strip().str.upper()
         df['data_dt'] = pd.to_datetime(df['data'], errors='coerce', dayfirst=True)
         df['Ano_Filtro'] = df['data_dt'].dt.year.fillna(0).astype(int).astype(str).replace('0', 'Desconhecido')
         df['Mes_Filtro'] = df['data_dt'].dt.strftime('%m').fillna('Desconhecido')
         return df
-    except: return pd.DataFrame()
+    except Exception as e: 
+        st.error(f"Erro ao carregar dados: {e}")
+        return pd.DataFrame()
 
 # ==========================================
 # TELA 1: LOGIN (Design do App .EXE)
@@ -312,4 +334,5 @@ else:
         tela_dashboard()
     elif st.session_state["rota"] == "registro":
         tela_registro()
+
 
